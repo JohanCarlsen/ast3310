@@ -125,26 +125,10 @@ class EnergyProduction:
 		return rate 
 
 
-	def pp0(self, r_array=None, PP0_array=None, temperature=None, density=None):
+	def pp0(self, r_array, PP0_array, temperature, density):
 		'''
 		Method to compute the energy production rate of the PP0 cycle
 		'''
-		if r_array is None:
-
-			r_array = self.r_PP0
-
-		if PP0_array is None:
-
-			PP0_array = self.PP0
-
-		if temperature is None:
-
-			temperature = self.T
-
-		if density is None:
-
-			density = self.rho
-
 		n_i = self.number_density(density)['n_p']		# Number density of protons
 		n_k = n_i
 		Q_i , Q_k = self.Q['pp'], self.Q['pd']			# Energy released by fusion of protons to deuterium and deuterium and proton to helium-3
@@ -158,26 +142,10 @@ class EnergyProduction:
 
 
 
-	def pp1(self, r_array=None, PP1_array=None, temperature=None, density=None):
+	def pp1(self, r_array, PP1_array, temperature, density):
 		'''
 		Method to compute the energy production rate of the PP1 cycle
 		'''
-		if r_array is None:
-
-			r_array = self.r_PP1
-
-		if PP1_array is None:
-
-			PP1_array = self.PP1
-
-		if temperature is None:
-
-			temperature = self.T
-
-		if density is None:
-
-			density = self.rho
-
 		n_i = self.number_density(density)['n_32He']		# Number density of helium-3
 		n_k = n_i 
 		Q_ik = self.Q['33']									# Energy released by fusing two helium-3 to helium-4
@@ -190,26 +158,10 @@ class EnergyProduction:
 		r_array[0] = r_ik
 
 
-	def pp2(self, r_array=None, PP2_array=None, temperature=None, density=None):
+	def pp2(self, r_array, PP2_array, temperature, density):
 		'''
 		Method to compute the energy production rate of the PP2 cycle
 		'''
-		if r_array is None:
-
-			r_array = self.r_PP2
-
-		if PP2_array is None:
-
-			PP2_array = self.PP2 
-
-		if temperature is None:
-
-			temperature = self.T
-
-		if density is None:
-
-			density = self.rho
-
 		lmbda = self.reaction_rates(temperature)
 		n = self.number_density(density)
 
@@ -236,26 +188,10 @@ class EnergyProduction:
 			r_array[i] = r_ik
 
 	
-	def pp3(self, r_array=None, PP3_array=None, temperature=None, density=None):
+	def pp3(self, r_array, PP3_array, temperature, density):
 		'''
 		Method to compute the energy production rate of the PP3 cycle
 		'''
-		if r_array is None:
-
-			r_array = self.r_PP3
-
-		if PP3_array is None:
-
-			PP3_array = self.PP3
-
-		if temperature is None:
-
-			temperature = self.T 
-
-		if density is None:
-
-			density = self.rho 
-
 		lmbda = self.reaction_rates(temperature)
 		n = self.number_density(density)
 
@@ -274,42 +210,11 @@ class EnergyProduction:
 			r_array[i] = r_ik
 
 
-	def limit_production_rate(self, r_PP0=None, r_PP1=None, r_PP2=None, r_PP3=None, PP0_array=None, PP1_array=None, PP2_array=None, PP3_array=None):
+	def limit_production_rate(self, r_PP0, r_PP1, r_PP2, r_PP3, PP0_array, PP1_array, PP2_array, PP3_array):
 		'''
 		Method to make sure no step consumes more 
 		of an element than the last step produces.
 		'''
-		if r_PP0 is None:
-
-			r_PP0 = self.r_PP0
-
-		if r_PP1 is None:
-		
-			r_PP1 = self.r_PP1
-
-		if r_PP2 is None:
-		
-			r_PP2 = self.r_PP2
-
-		if r_PP3 is None:
-
-			r_PP3 = self.r_PP3		
-
-		if PP0_array is None:
-
-			PP0_array = self.PP0 
-
-		if PP1_array is None:
-
-			PP1_array = self.PP1
-
-		if PP2_array is None:
-
-			PP2_array = self.PP2 
-
-		if PP3_array is None:
-
-			PP3_array = self.PP3
 
 		first_32He = r_PP0[0]								# First production of helium-3
 		common_32He = np.array([2 * r_PP1[0], r_PP2[0]])	# First reaction in PP1 requires 2 helium-3 and first of PP2 requires one
@@ -347,26 +252,12 @@ class EnergyProduction:
 			PP2_array[2] *= R
 			r_PP2[2] *= R
 
-	def cno(self, r_array=None, CNO_array=None, temperature=None, density=None):
+
+	def cno(self, r_array, CNO_array, temperature, density):
 		'''
 		Method to compute the energy production by 
 		the CNO cycle.
 		'''
-		if r_array is None:
-
-			r_array = self.r_CNO
-
-		if CNO_array is None: 
-
-			CNO_array = self.CNO
-
-		if temperature is None:
-
-			temperature = self.T 
-
-		if density is None: 
-
-			density = self.rho
 
 		n = self.number_density(density)
 		lmbda_ik = self.reaction_rates(temperature)['p14']
@@ -382,30 +273,126 @@ class EnergyProduction:
 		r_CNO = r_ik
 
 
+	def run_all_cycles(self, temperature=None, density=None, PP0=None, PP1=None, PP2=None, PP3=None, CNO=None, r_PP0=None, r_PP1=None, r_PP2=None, r_PP3=None, r_CNO=None):
+		'''
+		This method runs each of the methods for computing the energy output
+		from all of the PP branches and the CNO cycle, before limiting the 
+		production rates and updating the energy outputs.
+		'''
+		if temperature is None:
+
+			temperature = self.T 
+
+		if density is None:
+
+			density = self.rho 
+
+		if PP0 is None:
+
+			PP0 = self.PP0
+
+		if PP1 is None: 
+
+			PP1 = self.PP1 
+
+		if PP2 is None: 
+
+			PP2 = self.PP2 
+
+		if PP3 is None:
+
+			PP3 = self.PP3 
+
+		if CNO is None:
+
+			CNO = self.CNO 
+
+		if r_PP0 is None:
+
+			r_PP0 = self.r_PP0
+
+		if r_PP1 is None:
+
+			r_PP1 = self.r_PP1
+
+		if r_PP2 is None:
+
+			r_PP2 = self.r_PP2
+
+		if r_PP3 is None:
+
+			r_PP3 = self.r_PP3
+
+		if r_CNO is None:
+
+			r_CNO = self.r_CNO
+
+		self.pp0(r_PP0, PP0, temperature, density)
+		self.pp1(r_PP1, PP1, temperature, density)
+		self.pp2(r_PP2, PP2, temperature, density)
+		self.pp3(r_PP3, PP3, temperature, density)
+		self.cno(r_CNO, CNO, temperature, density)
+		self.limit_production_rate(r_PP0, r_PP1, r_PP2, r_PP3, PP0, PP1, PP2, PP3)
 
 
+	def sanity_check(self):
+		'''
+		Method to compare the methods in the class with
+		known values of the Sun, using the temperature
+		and density of the Sun, and the Sun's density
+		and T=10^8 K.
+		'''
+		T_sun = 1.57e7
+		T8 = 1e8
+		rho_sun = 1.62e5
 
+		Sun_test = EnergyProduction(T_sun, rho_sun)
+		Sun_test.run_all_cycles()
 
+		T8_test = EnergyProduction(T8, rho_sun)
+		T8_test.run_all_cycles()
 
+		'''
+		Known values for the Sun
+		'''
+		Sun_known = np.array([4.04e2, 8.68e-9, 4.86e-5, 1.49e-6, 5.29e-4, 1.63e-6, 9.18e-8])
+		T8_known = np.array([7.34e4, 1.09e0, 1.74e4, 1.22e-3, 4.35e-1, 1.26e5, 3.45e4])
 
-T_sun = 1.57e7
-rho_sun = 1.62e5
-a = EnergyProduction(T_sun, rho_sun)
-a.pp0()
-a.pp1()
-a.pp2()
-a.pp3()
-a.cno()
-a.limit_production_rate()
-print('Sanity check:')
-print(f'PP0:\t{a.PP0[0]*a.rho:.3e}\n')
-print(f'PP1:\t{a.PP1[0]*a.rho:.3e}\n')
-print(f'PP2:\t{a.PP2[0]*a.rho:.3e}')
-print(f'\t{a.PP2[1]*a.rho:.3e}')
-print(f'\t{a.PP2[2]*a.rho:.3e}\n')
-print(f'PP3:\t{a.PP3[0]*a.rho:.3e}')
-print(f'\t{a.PP3[1]*a.rho:.3e}\n')
-print(f'CNO:\t{a.CNO[0]*a.rho:.3e}')
+		'''
+		Creating a dictionary with all the values that will be used
+		to print a nicely formatted table.
+		'''
+		print('\nRUNNING SANITY CHECK\nAll energy units are J s^-1\n')
+		print(f"{'':<10} |{'':<5} {'Sun parameters':<31} | {'':<3} {'Sun density, T=10^8 K'}")
+		print(f"{'Reaction':<10} | {'Computed':<12} {'Actual':<12} {'Rel. err.':<10} | {'Computed':<12} {'Actual':<12} {'Rel. err.'}")
+
+		table = {
+		'PP0': [f'{Sun_test.PP0[0] * rho_sun:.3e}', f'{Sun_known[0]:.3e}', f'{T8_test.PP0[0] * rho_sun:.3e}', f'{T8_known[0]:.3e}'],
+		'PP1': [f'{Sun_test.PP1[0] * rho_sun:.3e}', f'{Sun_known[1]:.3e}', f'{T8_test.PP1[0] * rho_sun:.3e}', f'{T8_known[1]:.3e}'],
+		'PP2': [f'{Sun_test.PP2[0] * rho_sun:.3e}', f'{Sun_known[2]:.3e}', f'{T8_test.PP2[0] * rho_sun:.3e}', f'{T8_known[2]:.3e}'],
+		'   ': [f'{Sun_test.PP2[1] * rho_sun:.3e}', f'{Sun_known[3]:.3e}', f'{T8_test.PP2[1] * rho_sun:.3e}', f'{T8_known[3]:.3e}'],
+		'   ': [f'{Sun_test.PP2[2] * rho_sun:.3e}', f'{Sun_known[4]:.3e}', f'{T8_test.PP2[2] * rho_sun:.3e}', f'{T8_known[4]:.3e}'],
+		'PP3': [f'{Sun_test.PP3[1] * rho_sun:.3e}', f'{Sun_known[5]:.3e}', f'{T8_test.PP3[1] * rho_sun:.3e}', f'{T8_known[5]:.3e}'],
+		'CNO': [f'{Sun_test.CNO[0] * rho_sun:.3e}', f'{Sun_known[6]:.3e}', f'{T8_test.CNO[0] * rho_sun:.3e}', f'{T8_known[6]:.3e}']
+		}
+
+		for key, value in table.items():
+
+			sun_test, sun_known, t8_test, t8_known = value
+			sun_rel_err = f'{abs(float(sun_test) - float(sun_known)) / abs(float(sun_known)):.3e}'
+			t8_rel_err = f'{abs(float(t8_test) - float(t8_known)) / abs(float(t8_known)):.3e}'
+
+			print(f'{key:<10} | {sun_test:<12} {sun_known:<12} {sun_rel_err:<10} | {t8_test:<12} {t8_known:<12} {t8_rel_err}')
+
+		print('\nTEST FINISHED\n')
+
+if __name__ == "__main__":
+
+	T8 = 1e8
+	rho_sun = 1.62e5
+
+	test = EnergyProduction(T8, rho_sun)
+	test.sanity_check()
 
 
 
