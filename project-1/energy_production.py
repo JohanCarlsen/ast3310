@@ -62,6 +62,7 @@ class EnergyProduction:
 		'CNO': (1.944 + 1.513 + 7.551 + 7.297 + 1.757 + 4.966) * 1e6 * const.eV
 		}
 
+	########################################################################################################
 
 	def reaction_rates(self, temperature):
 		'''
@@ -86,6 +87,7 @@ class EnergyProduction:
 
 		return lmbda
 
+	########################################################################################################
 
 	def number_density(self, density):
 		'''
@@ -106,6 +108,7 @@ class EnergyProduction:
 
 		return n 
 
+	########################################################################################################
 
 	def r(self, n_i, n_k, lmbda, rho):
 		'''
@@ -124,6 +127,7 @@ class EnergyProduction:
 
 		return rate 
 
+	########################################################################################################	
 
 	def pp0(self, r_array, PP0_array, temperature, density):
 		'''
@@ -140,7 +144,7 @@ class EnergyProduction:
 		PP0_array[0] = eps
 		r_array[0] = r_ik
 
-
+	########################################################################################################	
 
 	def pp1(self, r_array, PP1_array, temperature, density):
 		'''
@@ -157,6 +161,7 @@ class EnergyProduction:
 		PP1_array[0] = eps
 		r_array[0] = r_ik
 
+	########################################################################################################	
 
 	def pp2(self, r_array, PP2_array, temperature, density):
 		'''
@@ -187,7 +192,8 @@ class EnergyProduction:
 			PP2_array[i] = eps
 			r_array[i] = r_ik
 
-	
+	########################################################################################################
+
 	def pp3(self, r_array, PP3_array, temperature, density):
 		'''
 		Method to compute the energy production rate of the PP3 cycle
@@ -209,6 +215,7 @@ class EnergyProduction:
 			PP3_array[i] = eps
 			r_array[i] = r_ik
 
+	########################################################################################################		
 
 	def limit_production_rate(self, r_PP0, r_PP1, r_PP2, r_PP3, PP0_array, PP1_array, PP2_array, PP3_array):
 		'''
@@ -252,6 +259,7 @@ class EnergyProduction:
 			PP2_array[2] *= R
 			r_PP2[2] *= R
 
+	########################################################################################################		
 
 	def cno(self, r_array, CNO_array, temperature, density):
 		'''
@@ -272,6 +280,7 @@ class EnergyProduction:
 		CNO_array[0] = eps
 		r_CNO = r_ik
 
+	########################################################################################################	
 
 	def run_all_cycles(self, temperature=None, density=None, PP0=None, PP1=None, PP2=None, PP3=None, CNO=None, r_PP0=None, r_PP1=None, r_PP2=None, r_PP3=None, r_CNO=None):
 		'''
@@ -334,6 +343,7 @@ class EnergyProduction:
 		self.cno(r_CNO, CNO, temperature, density)
 		self.limit_production_rate(r_PP0, r_PP1, r_PP2, r_PP3, PP0, PP1, PP2, PP3)
 
+	########################################################################################################	
 
 	def sanity_check(self):
 		'''
@@ -385,6 +395,8 @@ class EnergyProduction:
 			print(f'{key:<10} | {sun_test:<12} {sun_known:<12} {sun_rel_err:<10} | {t8_test:<12} {t8_known:<12} {t8_rel_err}')
 
 		print('\nTEST FINISHED\n')
+
+########################################################################################################
 
 if __name__ == "__main__":
 
