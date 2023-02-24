@@ -217,6 +217,27 @@ class EnergyProduction:
 
 	########################################################################################################		
 
+	def cno(self, r_array, CNO_array, temperature, density):
+		'''
+		Method to compute the energy production by 
+		the CNO cycle.
+		'''
+
+		n = self.number_density(density)
+		lmbda_ik = self.reaction_rates(temperature)['p14']
+
+		n_i = n['n_147N']
+		n_k = n['n_p']
+		Q_ik = self.Q['CNO']
+
+		r_ik = self.r(n_i, n_k, lmbda_ik, density)
+		eps = r_ik * Q_ik
+
+		CNO_array[0] = eps
+		r_CNO = r_ik
+
+	########################################################################################################		
+
 	def limit_production_rate(self, r_PP0, r_PP1, r_PP2, r_PP3, PP0_array, PP1_array, PP2_array, PP3_array):
 		'''
 		Method to make sure no step consumes more 
@@ -258,27 +279,6 @@ class EnergyProduction:
 			R = first_73Li / sum_73Li
 			PP2_array[2] *= R
 			r_PP2[2] *= R
-
-	########################################################################################################		
-
-	def cno(self, r_array, CNO_array, temperature, density):
-		'''
-		Method to compute the energy production by 
-		the CNO cycle.
-		'''
-
-		n = self.number_density(density)
-		lmbda_ik = self.reaction_rates(temperature)['p14']
-
-		n_i = n['n_147N']
-		n_k = n['n_p']
-		Q_ik = self.Q['CNO']
-
-		r_ik = self.r(n_i, n_k, lmbda_ik, density)
-		eps = r_ik * Q_ik
-
-		CNO_array[0] = eps
-		r_CNO = r_ik
 
 	########################################################################################################	
 
@@ -397,14 +397,4 @@ class EnergyProduction:
 		print('\nTEST FINISHED\n')
 
 ########################################################################################################
-
-if __name__ == "__main__":
-
-	T8 = 1e8
-	rho_sun = 1.62e5
-
-	test = EnergyProduction(T8, rho_sun)
-	test.sanity_check()
-
-
-
+	
