@@ -28,12 +28,12 @@ for i in range(N_steps):
 	star = EnergyProduction(T[i], rho_sun)
 	star.run_all_cycles()
 
-	E_tot = 3 * star.PP0 + star.PP1 + np.sum(star.PP2) + np.sum(star.PP3) + star.CNO
+	E_tot = 4 * star.PP0 + star.PP1 + np.sum(star.PP2) + np.sum(star.PP3) + star.CNO
 
 	E_rel[0, i] = star.PP0 / E_tot							# PP0 rel. energy 		(Excluded from plot as it is common for all PP branches)
-	E_rel[1, i] = (star.PP0 + star.PP1) / E_tot				# PP1 rel. energy
+	E_rel[1, i] = (2 * star.PP0 + star.PP1) / E_tot			# PP1 rel. energy
 	E_rel[2, i] = (star.PP0 + np.sum(star.PP2)) / E_tot		# PP2 rel. energy
-	E_rel[3, i] = (star.PP0 + np.sum(star.PP3)) / E_tot		# PP3 rel. energy
+	E_rel[3, i] = (star.PP0 + np.sum(star.PP3)) / E_tot					# PP3 rel. energy
 	E_rel[4, i] = star.CNO / E_tot							# CNO rel. energy
 
 plt.figure(figsize=(10, 4))

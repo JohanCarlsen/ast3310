@@ -180,9 +180,9 @@ class EnergyProduction:
 		'''
 		Setting the upper limit for T < 10^6 K
 		'''
-		if  temperature < 1e6 and Q_ik[1] > 1.57e-7 / (n_k[1] * N_A):
+		if  temperature < 1e6 and lmbda_ik[1] > 1.57e-7 / (n_k[1] * N_A):
 
-			Q_ik[1] = 1.57e-7 / (n_k[1] * N_A)
+			lmbda_ik[1] = 1.57e-7 / (n_k[1] * N_A)
 
 		for i in range(3):
 
