@@ -20,9 +20,9 @@ class EnergyProduction:
 		the reactions in all of the PP branches and the CNO cycle.
 		'''
 		self.PP0 = np.zeros(1)
-		self.PP1 = np.zeros(1)
-		self.PP2 = np.zeros(3)
-		self.PP3 = np.zeros(2)
+		self.PP1 = np.zeros(2)
+		self.PP2 = np.zeros(4)
+		self.PP3 = np.zeros(3)
 		self.CNO = np.zeros(1)
 
 		'''
@@ -158,7 +158,8 @@ class EnergyProduction:
 		r_ik = self.r(n_i, n_k, lmbda, density)
 		eps = r_ik * Q_ik
 
-		PP1_array[0] = eps
+		PP1_array[0] = self.PP0[0]
+		PP1_array[1] = eps
 		r_array[0] = r_ik
 
 	########################################################################################################	
@@ -180,6 +181,8 @@ class EnergyProduction:
 		'''
 		Setting the upper limit for T < 10^6 K
 		'''
+		PP2_array[0] = self.PP0[0]
+
 		if  temperature < 1e6 and lmbda_ik[1] > 1.57e-7 / (n_k[1] * N_A):
 
 			lmbda_ik[1] = 1.57e-7 / (n_k[1] * N_A)
@@ -189,7 +192,7 @@ class EnergyProduction:
 			r_ik = self.r(n_i[i], n_k[i], lmbda_ik[i], density)
 			eps = r_ik * Q_ik[i]
 
-			PP2_array[i] = eps
+			PP2_array[i+1] = eps
 			r_array[i] = r_ik
 
 	########################################################################################################
@@ -206,13 +209,15 @@ class EnergyProduction:
 		Q_ik = np.array([self.Q['34'], self.Q['17']])
 		lmbda_ik = np.array([lmbda['34'], lmbda['17']])
 
+		PP3_array[0] = self.PP0[0]
+
 		for i in range(2):
 
 			r_ik = self.r(n_i[i], n_k[i], lmbda_ik[i], density)
 			Q_ik[i] += (self.Q['8'] + self.Q['8_mark']) * (i == 1)
 			eps = r_ik * Q_ik[i]
 
-			PP3_array[i] = eps
+			PP3_array[i+1] = eps
 			r_array[i] = r_ik
 
 	########################################################################################################		
@@ -251,11 +256,11 @@ class EnergyProduction:
 		if first_32He <= sum_32He:
 
 			R = first_32He / sum_32He
-			PP1_array[0] *= R
+			PP1_array[1] *= R
 			r_PP1[0] *= R
-			PP2_array[0] *= R
+			PP2_array[1] *= R
 			r_PP2[0] *= R
-			PP3_array[0] *= R
+			PP3_array[1] *= R
 			r_PP3[0] *= R
 
 		first_74Be = r_PP2[0]							# First production of beryllium-7
@@ -265,9 +270,9 @@ class EnergyProduction:
 		if first_74Be <= sum_74Be:
 
 			R = first_74Be / sum_74Be
-			PP2_array[1] *= R
+			PP2_array[2] *= R
 			r_PP2[1] *= R
-			PP3_array[1] *= R
+			PP3_array[2] *= R
 			r_PP3[1] *= R
 
 		first_73Li = r_PP2[1]		# First production of lithium-7
@@ -277,7 +282,7 @@ class EnergyProduction:
 		if first_73Li <= sum_73Li:
 
 			R = first_73Li / sum_73Li
-			PP2_array[2] *= R
+			PP2_array[3] *= R
 			r_PP2[2] *= R
 
 	########################################################################################################	
@@ -378,11 +383,11 @@ class EnergyProduction:
 
 		table = {
 		'PP0': [f'{Sun_test.PP0[0] * rho_sun:.3e}', f'{Sun_known[0]:.3e}', f'{T8_test.PP0[0] * rho_sun:.3e}', f'{T8_known[0]:.3e}'],
-		'PP1': [f'{Sun_test.PP1[0] * rho_sun:.3e}', f'{Sun_known[1]:.3e}', f'{T8_test.PP1[0] * rho_sun:.3e}', f'{T8_known[1]:.3e}'],
-		'PP2': [f'{Sun_test.PP2[0] * rho_sun:.3e}', f'{Sun_known[2]:.3e}', f'{T8_test.PP2[0] * rho_sun:.3e}', f'{T8_known[2]:.3e}'],
-		'   ': [f'{Sun_test.PP2[1] * rho_sun:.3e}', f'{Sun_known[3]:.3e}', f'{T8_test.PP2[1] * rho_sun:.3e}', f'{T8_known[3]:.3e}'],
-		'   ': [f'{Sun_test.PP2[2] * rho_sun:.3e}', f'{Sun_known[4]:.3e}', f'{T8_test.PP2[2] * rho_sun:.3e}', f'{T8_known[4]:.3e}'],
-		'PP3': [f'{Sun_test.PP3[1] * rho_sun:.3e}', f'{Sun_known[5]:.3e}', f'{T8_test.PP3[1] * rho_sun:.3e}', f'{T8_known[5]:.3e}'],
+		'PP1': [f'{Sun_test.PP1[1] * rho_sun:.3e}', f'{Sun_known[1]:.3e}', f'{T8_test.PP1[1] * rho_sun:.3e}', f'{T8_known[1]:.3e}'],
+		'PP2': [f'{Sun_test.PP2[1] * rho_sun:.3e}', f'{Sun_known[2]:.3e}', f'{T8_test.PP2[1] * rho_sun:.3e}', f'{T8_known[2]:.3e}'],
+		'   ': [f'{Sun_test.PP2[2] * rho_sun:.3e}', f'{Sun_known[3]:.3e}', f'{T8_test.PP2[2] * rho_sun:.3e}', f'{T8_known[3]:.3e}'],
+		'   ': [f'{Sun_test.PP2[3] * rho_sun:.3e}', f'{Sun_known[4]:.3e}', f'{T8_test.PP2[3] * rho_sun:.3e}', f'{T8_known[4]:.3e}'],
+		'PP3': [f'{Sun_test.PP3[2] * rho_sun:.3e}', f'{Sun_known[5]:.3e}', f'{T8_test.PP3[2] * rho_sun:.3e}', f'{T8_known[5]:.3e}'],
 		'CNO': [f'{Sun_test.CNO[0] * rho_sun:.3e}', f'{Sun_known[6]:.3e}', f'{T8_test.CNO[0] * rho_sun:.3e}', f'{T8_known[6]:.3e}']
 		}
 
@@ -397,4 +402,11 @@ class EnergyProduction:
 		print('\nTEST FINISHED\n')
 
 ########################################################################################################
+
+if __name__ == '__main__':
+	'''
+	Performing the sanity check.
+	'''
+	test = EnergyProduction(0, 0)
+	test.sanity_check()
 	

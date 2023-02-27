@@ -13,7 +13,7 @@ rho_sun = 1.62e5	# Sun density [kgm^-3]
 N_steps = 1001 		# No. of points to solve for 
 
 T = np.logspace(4, 9, N_steps)			# Temperature range [K]
-E_rel = np.zeros((5, N_steps))			# Array to contain the rel. energies
+E_rel = np.zeros((4, N_steps))			# Array to contain the rel. energies
 
 for i in range(N_steps):
 	'''
@@ -24,21 +24,19 @@ for i in range(N_steps):
 	star = EnergyProduction(T[i], rho_sun)
 	star.run_all_cycles()
 
-	E_tot = 2 * star.PP0 + star.PP1 + np.sum(star.PP2) + np.sum(star.PP3) + star.CNO
+	E_tot = np.sum(star.PP1) + np.sum(star.PP2) + np.sum(star.PP3) + star.CNO
 
-	E_rel[0, i] = star.PP0 / E_tot							# PP0 rel. energy 		(Excluded from plot as it is common for all PP branches)
-	E_rel[1, i] = (star.PP0 + star.PP1) / E_tot				# PP1 rel. energy
-	E_rel[2, i] = (star.PP0 + np.sum(star.PP2)) / E_tot		# PP2 rel. energy
-	E_rel[3, i] = (np.sum(star.PP3)) / E_tot				# PP3 rel. energy
-	E_rel[4, i] = star.CNO / E_tot							# CNO rel. energy
+	E_rel[0, i] = np.sum(star.PP1) / E_tot		# PP1 rel. energy
+	E_rel[1, i] = np.sum(star.PP2) / E_tot		# PP2 rel. energy
+	E_rel[2, i] = np.sum(star.PP3) / E_tot		# PP3 rel. energy
+	E_rel[3, i] = star.CNO / E_tot				# CNO rel. energy
 
 plt.figure(figsize=(10, 4))
 
-# plt.plot(T, E_rel[0, :], lw=1, ls=(0, (3, 1, 1, 1, 1, 1)), color='black', label='PP0')
-plt.plot(T, E_rel[1, :], lw=.5, ls='solid', color='black', label='PP1')
-plt.plot(T, E_rel[2, :], lw=1, ls='dotted', color='black', label='PP2')
-plt.plot(T, E_rel[3, :], lw=1, ls='dashed', color='black', label='PP3')
-plt.plot(T, E_rel[4, :], lw=1, ls='dashdot', color='black', label='CNO')
+plt.plot(T, E_rel[0, :], lw=.5, ls='solid', color='black', label='PP1')
+plt.plot(T, E_rel[1, :], lw=1, ls='dotted', color='black', label='PP2')
+plt.plot(T, E_rel[2, :], lw=1, ls='dashed', color='black', label='PP3')
+plt.plot(T, E_rel[3, :], lw=1, ls='dashdot', color='black', label='CNO')
 
 plt.xscale('log')
 plt.xlabel('Temperature [K]')
