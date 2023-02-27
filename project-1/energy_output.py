@@ -23,12 +23,8 @@ def energy_output(reaction):
 
 
 '''
-Defining constants and elements in atomic mass units
+Defining element masses in atomic mass units
 '''
-u = const.m_u			# Atomic mass unit in kg 
-m_e = const.m_e / u 	# Electron mass in u
-m_p = const.m_p / u 	# Proton mass in u 
-
 H1 = 1.007825			# Hydrogen mass in u 
 D2 = 2.014				# Deuterium mass in u 
 He3 = 3.016 			# Helium-3 mass in u 
