@@ -15,7 +15,8 @@ Defining constants
 e = const.e 					# Elementary charge [C]
 h = const.h 					# Planck constant [J Hz^-1]
 pi = const.pi 					# Pi
-m_u = const.m_u
+eV = const.eV					# Electron volt [J]
+m_u = const.m_u					# Atomic mass unit [kg]
 k_B = const.k 					# Boltzmann constant [JK^-1]
 epsilon_0 = const.epsilon_0		# Vacuum permittivity
 
@@ -30,9 +31,17 @@ def lambda_sigma(m_i, m_k, Z_i, Z_k, energy):
 
 	m = m_i * m_k / (m_i + m_k)		# Reduced mass 
 
+	'''
+	The two exponentials from the proportionality function (lambda) and
+	the cross section of the tunneling effect (sigma).
+	'''
 	lmbda = np.exp(-energy / (k_B * T))
 	sigma = np.exp(-np.sqrt(m / (2 * energy)) * Z_i * Z_k * e**2 * pi / (epsilon_0 * h))
 
+	'''
+	The Gamow peak is found by the product of the proportionality
+	function and the the tunneling effect cross section.
+	'''
 	gamow = lmbda * sigma
 	idx = np.where([gamow == np.max(gamow)])[0][0]
 	peak = gamow[idx]
@@ -44,29 +53,29 @@ def lambda_sigma(m_i, m_k, Z_i, Z_k, energy):
 Defining element masses in atomic mass units
 '''
 H1 = 1.007825 * m_u			# Hydrogen mass in u 
-D2 = 2.014 * m_u				# Deuterium mass in u 
+D2 = 2.014 * m_u			# Deuterium mass in u 
 He3 = 3.016 * m_u 			# Helium-3 mass in u 
 He4 = 4.0026 * m_u			# Helium-4 mass in u
 Be7 = 7.01693 * m_u			# Beryllium-7 mass in u
-Li7 = 7.016004 * m_u			# Lithium-7 mass in u 
+Li7 = 7.016004 * m_u		# Lithium-7 mass in u 
 
 C12 = 12. * m_u				# Carbon-12 mass in u 
-C13 = 13.00336 * m_u			# Carbon-13 mass in u 
-N13 = 13.00574 * m_u			# Nitrogen-13 mass in u 
-N14 = 14.00307 * m_u			# Nitrogen-14 mass in u 
-N15 = 15.00109 * m_u			# Nitrogen-15 mass in u
+C13 = 13.00336 * m_u		# Carbon-13 mass in u 
+N13 = 13.00574 * m_u		# Nitrogen-13 mass in u 
+N14 = 14.00307 * m_u		# Nitrogen-14 mass in u 
+N15 = 15.00109 * m_u		# Nitrogen-15 mass in u
 
 '''
 Defining atomic numbers
 '''
-Z_H = 1 
-Z_He = 2 
-Z_Be = 4
-Z_Li = 3
+Z_H = 1 		# Hydrogen
+Z_He = 2 		# Helium
+Z_Be = 4 		# Beryllium
+Z_Li = 3 		# Lithium
 
-Z_C = 6
-Z_N = 7 
-Z_O = 8
+Z_C = 6 		# Carbon
+Z_N = 7 		# Nitrogen
+Z_O = 8 		# Oxygen
 
 '''
 Defining energy interval [10^-17, 10^-13] J
@@ -110,13 +119,13 @@ plt.figure(figsize=(10, 5))
 
 for i in range(10):
 
-	plt.plot(E, rel_prob[i, :], label=labels[i])
+	plt.plot(E / eV, rel_prob[i, :], label=labels[i])
 
-plt.xlabel('Energy [J]')
+plt.xlabel('Energy [eV]')
 plt.ylabel('Relative probability')
 plt.xscale('log')
 plt.yscale('log')
-plt.xlim([6e-18, 1e-12])
+plt.xlim([40, 5e6])
 
 plt.legend()
 plt.savefig('figures/gamow.pdf')

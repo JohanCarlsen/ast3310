@@ -64,7 +64,7 @@ class EnergyProduction:
 
 	########################################################################################################
 
-	def reaction_rates(self, temperature):
+	def proportionality_function(self, temperature):
 		'''
 		Function will take temperature in K as argument and return a dictionary
 		containing the energy rates (lambdas) for each reaction.
@@ -136,7 +136,7 @@ class EnergyProduction:
 		n_i = self.number_density(density)['n_p']		# Number density of protons
 		n_k = n_i
 		Q_i , Q_k = self.Q['pp'], self.Q['pd']			# Energy released by fusion of protons to deuterium and deuterium and proton to helium-3
-		lmbda = self.reaction_rates(temperature)['pp']	# Reaction rate for two protons
+		lmbda = self.proportionality_function(temperature)['pp']	# Reaction rate for two protons
 
 		r_ik = self.r(n_i, n_k, lmbda, density)
 		eps = r_ik * (Q_i + Q_k)
@@ -153,7 +153,7 @@ class EnergyProduction:
 		n_i = self.number_density(density)['n_32He']		# Number density of helium-3
 		n_k = n_i 
 		Q_ik = self.Q['33']									# Energy released by fusing two helium-3 to helium-4
-		lmbda = self.reaction_rates(temperature)['33']		# Reaction rate for two helium-3
+		lmbda = self.proportionality_function(temperature)['33']		# Reaction rate for two helium-3
 
 		r_ik = self.r(n_i, n_k, lmbda, density)
 		eps = r_ik * Q_ik
@@ -168,7 +168,7 @@ class EnergyProduction:
 		'''
 		Method to compute the energy production rate of the PP2 cycle
 		'''
-		lmbda = self.reaction_rates(temperature)
+		lmbda = self.proportionality_function(temperature)
 		n = self.number_density(density)
 
 		n_i = np.array([n['n_32He'], n['n_74Be'], n['n_73Li']])				# Number densities of helium-3, beryllium-7, and litium-7
@@ -201,7 +201,7 @@ class EnergyProduction:
 		'''
 		Method to compute the energy production rate of the PP3 cycle
 		'''
-		lmbda = self.reaction_rates(temperature)
+		lmbda = self.proportionality_function(temperature)
 		n = self.number_density(density)
 
 		n_i = np.array([n['n_32He'], n['n_74Be']])
@@ -229,7 +229,7 @@ class EnergyProduction:
 		'''
 
 		n = self.number_density(density)
-		lmbda_ik = self.reaction_rates(temperature)['p14']
+		lmbda_ik = self.proportionality_function(temperature)['p14']
 
 		n_i = n['n_147N']
 		n_k = n['n_p']
