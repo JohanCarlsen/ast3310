@@ -10,7 +10,7 @@ from energy_production import EnergyProduction
 For the relative energy we will use temperature from 10^4 to 10^9 K.
 '''
 rho_sun = 1.62e5	# Sun density [kgm^-3]
-N_steps = 10001 	# No. of points to solve for 
+N_steps = 1001	 	# No. of points to solve for 
 
 T = np.logspace(4, 9, N_steps)			# Temperature range [K]
 E_rel = np.zeros((4, N_steps))			# Array to contain the rel. energies
