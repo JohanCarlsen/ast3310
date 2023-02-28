@@ -141,8 +141,8 @@ class EnergyProduction:
 		r_ik = self.r(n_i, n_k, lmbda, density)
 		eps = r_ik * (Q_i + Q_k)
 
-		PP0_array[0] = eps
-		r_array[0] = r_ik
+		self.PP0[0] = eps
+		self.r_PP0[0] = r_ik
 
 	########################################################################################################	
 
@@ -176,14 +176,14 @@ class EnergyProduction:
 		Q_ik = np.array([self.Q['34'], self.Q['e7'], self.Q['17_mark']])	# Energy releases of the fusion reactions 
 		lmbda_ik = np.array([lmbda['34'], lmbda['e7'], lmbda['17_mark']])	# Reaction rates for the PP2 branch
 
-		N_A = const.N_A * 1e-6
+		N_A = const.N_A * 1e6
 
 		'''
 		Setting the upper limit for T < 10^6 K
 		'''
 		PP2_array[0] = self.PP0[0]
 
-		if  temperature < 1e6 and lmbda_ik[1] > 1.57e-7 / (n_k[1] * N_A):
+		if  temperature < 1e6:
 
 			lmbda_ik[1] = 1.57e-7 / (n_k[1] * N_A)
 
@@ -348,6 +348,13 @@ class EnergyProduction:
 		self.cno(r_CNO, CNO, temperature, density)
 		self.limit_production_rate(r_PP0, r_PP1, r_PP2, r_PP3, PP0, PP1, PP2, PP3)
 
+		'''
+		Fixing the energy gained from the PP0 reaction in each of the branches.
+		'''
+		self.PP1[0] = self.PP0[0] * self.r_PP1[0] / (2 * self.r_PP0[0])
+		self.PP2[0] = self.PP0[0] * self.r_PP2[1] / (self.r_PP0[0])
+		self.PP3[0] = self.PP0[0] * self.r_PP3[1] / (self.r_PP0[0])
+
 	########################################################################################################	
 
 	def sanity_check(self):
@@ -404,9 +411,10 @@ class EnergyProduction:
 ########################################################################################################
 
 if __name__ == '__main__':
+
 	'''
 	Performing the sanity check.
 	'''
-	test = EnergyProduction(0, 0)
+	test = EnergyProduction(1e9, 1.62e5)
 	test.sanity_check()
 	

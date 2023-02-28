@@ -10,7 +10,7 @@ from energy_production import EnergyProduction
 For the relative energy we will use temperature from 10^4 to 10^9 K.
 '''
 rho_sun = 1.62e5	# Sun density [kgm^-3]
-N_steps = 1001 		# No. of points to solve for 
+N_steps = 10001 	# No. of points to solve for 
 
 T = np.logspace(4, 9, N_steps)			# Temperature range [K]
 E_rel = np.zeros((4, N_steps))			# Array to contain the rel. energies
@@ -33,7 +33,7 @@ for i in range(N_steps):
 
 plt.figure(figsize=(10, 4))
 
-plt.plot(T, E_rel[0, :], lw=.5, ls='solid', color='black', label='PP1')
+plt.plot(T, E_rel[0, :], lw=1, ls='solid', color='black', label='PP1')
 plt.plot(T, E_rel[1, :], lw=1, ls='dotted', color='black', label='PP2')
 plt.plot(T, E_rel[2, :], lw=1, ls='dashed', color='black', label='PP3')
 plt.plot(T, E_rel[3, :], lw=1, ls='dashdot', color='black', label='CNO')
@@ -43,7 +43,7 @@ plt.xlabel('Temperature [K]')
 plt.ylabel('Rel. energy production')
 plt.legend()
 
-plt.grid(True, axis='x')
+# plt.grid(True, axis='x')
 plt.tight_layout()
 plt.savefig('figures/rel-energy-prod.pdf')
 plt.savefig('figures/rel-energy-prod.png')
