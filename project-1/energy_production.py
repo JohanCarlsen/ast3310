@@ -352,8 +352,8 @@ class EnergyProduction:
 		Fixing the energy gained from the PP0 reaction in each of the branches.
 		'''
 		self.PP1[0] = self.PP0[0] * self.r_PP1[0] / (2 * self.r_PP0[0])
-		self.PP2[0] = self.PP0[0] * self.r_PP2[1] / (self.r_PP0[0])
-		self.PP3[0] = self.PP0[0] * self.r_PP3[1] / (self.r_PP0[0])
+		self.PP2[0] = self.PP0[0] * self.r_PP2[0] / (self.r_PP0[0])
+		self.PP3[0] = self.PP0[0] * self.r_PP3[0] / (self.r_PP0[0])
 
 	########################################################################################################	
 
