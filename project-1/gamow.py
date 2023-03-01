@@ -125,7 +125,7 @@ plt.xlabel('Energy [eV]')
 plt.ylabel('Relative probability')
 plt.xscale('log')
 plt.yscale('log')
-plt.xlim([40, 5e6])
+plt.ylim([1e-25, 5e-2])
 
 plt.legend()
 plt.savefig('figures/gamow.pdf')
