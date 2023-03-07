@@ -129,16 +129,16 @@ class EnergyProduction:
 
 	########################################################################################################	
 
-	def pp0(self, r_array, PP0_array, temperature, density):
+	def pp0(self):
 		'''
 		Method to compute the energy production rate of the PP0 cycle
 		'''
-		n_i = self.number_density(density)['n_p']		# Number density of protons
+		n_i = self.number_density(self.rho)['n_p']		# Number density of protons
 		n_k = n_i
 		Q_i , Q_k = self.Q['pp'], self.Q['pd']			# Energy released by fusion of protons to deuterium and deuterium and proton to helium-3
-		lmbda = self.proportionality_function(temperature)['pp']	# Reaction rate for two protons
+		lmbda = self.proportionality_function(self.T)['pp']	# Reaction rate for two protons
 
-		r_ik = self.r(n_i, n_k, lmbda, density)
+		r_ik = self.r(n_i, n_k, lmbda, self.rho)
 		eps = r_ik * (Q_i + Q_k)
 
 		self.PP0[0] = eps
@@ -146,30 +146,30 @@ class EnergyProduction:
 
 	########################################################################################################	
 
-	def pp1(self, r_array, PP1_array, temperature, density):
+	def pp1(self):
 		'''
 		Method to compute the energy production rate of the PP1 cycle
 		'''
-		n_i = self.number_density(density)['n_32He']		# Number density of helium-3
+		n_i = self.number_density(self.rho)['n_32He']		# Number density of helium-3
 		n_k = n_i 
 		Q_ik = self.Q['33']									# Energy released by fusing two helium-3 to helium-4
-		lmbda = self.proportionality_function(temperature)['33']		# Reaction rate for two helium-3
+		lmbda = self.proportionality_function(self.T)['33']		# Reaction rate for two helium-3
 
-		r_ik = self.r(n_i, n_k, lmbda, density)
+		r_ik = self.r(n_i, n_k, lmbda, self.rho)
 		eps = r_ik * Q_ik
 
-		PP1_array[0] = self.PP0[0]
-		PP1_array[1] = eps
-		r_array[0] = r_ik
+		self.PP1[0] = self.PP0[0]
+		self.PP1[1] = eps
+		self.r_PP1[0] = r_ik
 
 	########################################################################################################	
 
-	def pp2(self, r_array, PP2_array, temperature, density):
+	def pp2(self):
 		'''
 		Method to compute the energy production rate of the PP2 cycle
 		'''
-		lmbda = self.proportionality_function(temperature)
-		n = self.number_density(density)
+		lmbda = self.proportionality_function(self.T)
+		n = self.number_density(self.rho)
 
 		n_i = np.array([n['n_32He'], n['n_74Be'], n['n_73Li']])				# Number densities of helium-3, beryllium-7, and litium-7
 		n_k = np.array([n['n_He'], n['n_e'], n['n_p']])						# Number densities of helium-4, electrones, and protons
@@ -181,109 +181,109 @@ class EnergyProduction:
 		'''
 		Setting the upper limit for T < 10^6 K
 		'''
-		PP2_array[0] = self.PP0[0]
+		self.PP2[0] = self.PP0[0]
 
-		if  temperature < 1e6:
+		if  self.T < 1e6:
 
 			lmbda_ik[1] = 1.57e-7 / (n_k[1] * N_A)
 
 		for i in range(3):
 
-			r_ik = self.r(n_i[i], n_k[i], lmbda_ik[i], density)
+			r_ik = self.r(n_i[i], n_k[i], lmbda_ik[i], self.rho)
 			eps = r_ik * Q_ik[i]
 
-			PP2_array[i+1] = eps
-			r_array[i] = r_ik
+			self.PP2[i+1] = eps
+			self.r_PP2[i] = r_ik
 
 	########################################################################################################
 
-	def pp3(self, r_array, PP3_array, temperature, density):
+	def pp3(self):
 		'''
 		Method to compute the energy production rate of the PP3 cycle
 		'''
-		lmbda = self.proportionality_function(temperature)
-		n = self.number_density(density)
+		lmbda = self.proportionality_function(self.T)
+		n = self.number_density(self.rho)
 
 		n_i = np.array([n['n_32He'], n['n_74Be']])
 		n_k = np.array([n['n_He'], n['n_p']])
 		Q_ik = np.array([self.Q['34'], self.Q['17']])
 		lmbda_ik = np.array([lmbda['34'], lmbda['17']])
 
-		PP3_array[0] = self.PP0[0]
+		self.PP3[0] = self.PP0[0]
 
 		for i in range(2):
 
-			r_ik = self.r(n_i[i], n_k[i], lmbda_ik[i], density)
+			r_ik = self.r(n_i[i], n_k[i], lmbda_ik[i], self.rho)
 			Q_ik[i] += (self.Q['8'] + self.Q['8_mark']) * (i == 1)
 			eps = r_ik * Q_ik[i]
 
-			PP3_array[i+1] = eps
-			r_array[i] = r_ik
+			self.PP3[i+1] = eps
+			self.r_PP3[i] = r_ik
 
 	########################################################################################################		
 
-	def cno(self, r_array, CNO_array, temperature, density):
+	def cno(self):
 		'''
 		Method to compute the energy production by 
 		the CNO cycle.
 		'''
 
-		n = self.number_density(density)
-		lmbda_ik = self.proportionality_function(temperature)['p14']
+		n = self.number_density(self.rho)
+		lmbda_ik = self.proportionality_function(self.T)['p14']
 
 		n_i = n['n_147N']
 		n_k = n['n_p']
 		Q_ik = self.Q['CNO']
 
-		r_ik = self.r(n_i, n_k, lmbda_ik, density)
+		r_ik = self.r(n_i, n_k, lmbda_ik, self.rho)
 		eps = r_ik * Q_ik
 
-		CNO_array[0] = eps
-		r_CNO = r_ik
+		self.CNO[0] = eps
+		self.r_CNO = r_ik
 
 	########################################################################################################		
 
-	def limit_production_rate(self, r_PP0, r_PP1, r_PP2, r_PP3, PP0_array, PP1_array, PP2_array, PP3_array):
+	def limit_production_rate(self):
 		'''
 		Method to make sure no step consumes more 
 		of an element than the last step produces.
 		'''
 
-		first_32He = r_PP0[0]								# First production of helium-3
-		common_32He = np.array([2 * r_PP1[0], r_PP2[0]])	# First reaction in PP1 requires 2 helium-3 and first of PP2 requires one
+		first_32He = self.r_PP0[0]								# First production of helium-3
+		common_32He = np.array([2 * self.r_PP1[0], self.r_PP2[0]])	# First reaction in PP1 requires 2 helium-3 and first of PP2 requires one
 		sum_32He = np.sum(common_32He)
 
 		if first_32He <= sum_32He:
 
 			R = first_32He / sum_32He
-			PP1_array[1] *= R
-			r_PP1[0] *= R
-			PP2_array[1] *= R
-			r_PP2[0] *= R
-			PP3_array[1] *= R
-			r_PP3[0] *= R
+			self.PP1[1] *= R
+			self.r_PP1[0] *= R
+			self.PP2[1] *= R
+			self.r_PP2[0] *= R
+			self.PP3[1] *= R
+			self.r_PP3[0] *= R
 
-		first_74Be = r_PP2[0]							# First production of beryllium-7
-		common_74Be = np.array([r_PP2[1], r_PP3[1]])	# Second reaction in PP2 and PP3 requires beryllium-7
+		first_74Be = self.r_PP2[0]							# First production of beryllium-7
+		common_74Be = np.array([self.r_PP2[1], self.r_PP3[1]])	# Second reaction in PP2 and PP3 requires beryllium-7
 		sum_74Be = np.sum(common_74Be)
 
 		if first_74Be <= sum_74Be:
 
 			R = first_74Be / sum_74Be
-			PP2_array[2] *= R
-			r_PP2[1] *= R
-			PP3_array[2] *= R
-			r_PP3[1] *= R
+			self.PP2[2] *= R
+			self.r_PP2[1] *= R
+			self.PP3[2] *= R
+			self.r_PP3[1] *= R
 
-		first_73Li = r_PP2[1]		# First production of lithium-7
-		common_73Li = r_PP2[2]		# Third step of PP2 require lithium-7
+		first_73Li = self.r_PP2[1]		# First production of lithium-7
+		common_73Li = self.r_PP2[2]		# Third step of PP2 require lithium-7
 		sum_73Li = common_73Li
 
 		if first_73Li <= sum_73Li:
 
 			R = first_73Li / sum_73Li
-			PP2_array[3] *= R
-			r_PP2[2] *= R
+			self.PP2[3] *= R
+			self.r_PP2[2] *= R
 
 	########################################################################################################	
 
@@ -293,60 +293,12 @@ class EnergyProduction:
 		from all of the PP branches and the CNO cycle, before limiting the 
 		production rates and updating the energy outputs.
 		'''
-		if temperature is None:
-
-			temperature = self.T 
-
-		if density is None:
-
-			density = self.rho 
-
-		if PP0 is None:
-
-			PP0 = self.PP0
-
-		if PP1 is None: 
-
-			PP1 = self.PP1 
-
-		if PP2 is None: 
-
-			PP2 = self.PP2 
-
-		if PP3 is None:
-
-			PP3 = self.PP3 
-
-		if CNO is None:
-
-			CNO = self.CNO 
-
-		if r_PP0 is None:
-
-			r_PP0 = self.r_PP0
-
-		if r_PP1 is None:
-
-			r_PP1 = self.r_PP1
-
-		if r_PP2 is None:
-
-			r_PP2 = self.r_PP2
-
-		if r_PP3 is None:
-
-			r_PP3 = self.r_PP3
-
-		if r_CNO is None:
-
-			r_CNO = self.r_CNO
-
-		self.pp0(r_PP0, PP0, temperature, density)
-		self.pp1(r_PP1, PP1, temperature, density)
-		self.pp2(r_PP2, PP2, temperature, density)
-		self.pp3(r_PP3, PP3, temperature, density)
-		self.cno(r_CNO, CNO, temperature, density)
-		self.limit_production_rate(r_PP0, r_PP1, r_PP2, r_PP3, PP0, PP1, PP2, PP3)
+		self.pp0()
+		self.pp1()
+		self.pp2()
+		self.pp3()
+		self.cno()
+		self.limit_production_rate()
 
 		'''
 		Fixing the energy gained from the PP0 reaction in each of the branches.
