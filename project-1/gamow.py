@@ -43,10 +43,10 @@ def lambda_sigma(m_i, m_k, Z_i, Z_k, energy):
 	function and the the tunneling effect cross section.
 	'''
 	gamow = lmbda * sigma
-	idx = np.where([gamow == np.max(gamow)])[0][0]
+	idx = np.where(gamow == np.max(gamow))[0][0]
 	peak = gamow[idx]
 
-	return gamow
+	return gamow / peak
 
 
 '''
@@ -100,7 +100,7 @@ CNO_2 = lambda_sigma(C13, H1, Z_C, Z_H, E)
 CNO_3 = lambda_sigma(N14, H1, Z_N, Z_H, E)
 CNO_4 = lambda_sigma(N15, H1, Z_N, Z_H, E)
 
-tot_prob = np.sum(PP0_1 + PP0_2 + PP1 + PP2_1 + PP2_2 + PP3 + CNO_1 + CNO_2 + CNO_3 + CNO_4)
+tot_prob = 1#np.sum(PP0_1 + PP0_2 + PP1 + PP2_1 + PP2_2 + PP3 + CNO_1 + CNO_2 + CNO_3 + CNO_4)
 
 rel_prob[0, :] = PP0_1 / tot_prob 
 rel_prob[1, :] = PP0_2 / tot_prob 
@@ -119,13 +119,11 @@ plt.figure(figsize=(10, 5))
 
 for i in range(10):
 
-	plt.plot(E / eV, rel_prob[i, :], label=labels[i])
+	plt.plot(E, rel_prob[i, :], label=labels[i])
 
 plt.xlabel('Energy [eV]')
 plt.ylabel('Relative probability')
 plt.xscale('log')
-plt.yscale('log')
-plt.ylim([1e-25, 5e-2])
 
 plt.legend()
 plt.savefig('figures/gamow.pdf')
