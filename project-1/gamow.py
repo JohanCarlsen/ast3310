@@ -43,27 +43,27 @@ def lambda_sigma(m_i, m_k, Z_i, Z_k, energy):
 	function and the the tunneling effect cross section.
 	'''
 	gamow = lmbda * sigma
-	idx = np.where(gamow == np.max(gamow))[0][0]
+	idx = np.where(gamow == np.max(gamow))[0][0]	# Extracting the (first) index where the gamow variable has its peak
 	peak = gamow[idx]
 
-	return gamow / peak
+	return gamow / peak								# Returning the normalized gamow curve
 
 
 '''
 Defining element masses in atomic mass units
 '''
-H1 = 1.007825 * m_u			# Hydrogen mass in u 
-D2 = 2.014 * m_u			# Deuterium mass in u 
-He3 = 3.016 * m_u 			# Helium-3 mass in u 
-He4 = 4.0026 * m_u			# Helium-4 mass in u
-Be7 = 7.01693 * m_u			# Beryllium-7 mass in u
-Li7 = 7.016004 * m_u		# Lithium-7 mass in u 
+H1 = 1.007825 * m_u			# Hydrogen mass in kg
+D2 = 2.014 * m_u			# Deuterium mass in kg
+He3 = 3.016 * m_u 			# Helium-3 mass in kg
+He4 = 4.0026 * m_u			# Helium-4 mass in kg
+Be7 = 7.01693 * m_u			# Beryllium-7 mass in kg
+Li7 = 7.016004 * m_u		# Lithium-7 mass in kg
 
-C12 = 12. * m_u				# Carbon-12 mass in u 
-C13 = 13.00336 * m_u		# Carbon-13 mass in u 
-N13 = 13.00574 * m_u		# Nitrogen-13 mass in u 
-N14 = 14.00307 * m_u		# Nitrogen-14 mass in u 
-N15 = 15.00109 * m_u		# Nitrogen-15 mass in u
+C12 = 12. * m_u				# Carbon-12 mass in kg
+C13 = 13.00336 * m_u		# Carbon-13 mass in kg
+N13 = 13.00574 * m_u		# Nitrogen-13 mass in kg
+N14 = 14.00307 * m_u		# Nitrogen-14 mass in kg
+N15 = 15.00109 * m_u		# Nitrogen-15 mass in kg
 
 '''
 Defining atomic numbers
@@ -100,18 +100,16 @@ CNO_2 = lambda_sigma(C13, H1, Z_C, Z_H, E)
 CNO_3 = lambda_sigma(N14, H1, Z_N, Z_H, E)
 CNO_4 = lambda_sigma(N15, H1, Z_N, Z_H, E)
 
-tot_prob = 1#np.sum(PP0_1 + PP0_2 + PP1 + PP2_1 + PP2_2 + PP3 + CNO_1 + CNO_2 + CNO_3 + CNO_4)
-
-rel_prob[0, :] = PP0_1 / tot_prob 
-rel_prob[1, :] = PP0_2 / tot_prob 
-rel_prob[2, :] = PP1 / tot_prob
-rel_prob[3, :] = PP2_1 / tot_prob
-rel_prob[4, :] = PP2_2 / tot_prob
-rel_prob[5, :] = PP3 / tot_prob
-rel_prob[6, :] = CNO_1 / tot_prob
-rel_prob[7, :] = CNO_2 / tot_prob
-rel_prob[8, :] = CNO_3 / tot_prob
-rel_prob[9, :] = CNO_4 / tot_prob
+rel_prob[0, :] = PP0_1 
+rel_prob[1, :] = PP0_2 
+rel_prob[2, :] = PP1
+rel_prob[3, :] = PP2_1
+rel_prob[4, :] = PP2_2
+rel_prob[5, :] = PP3
+rel_prob[6, :] = CNO_1
+rel_prob[7, :] = CNO_2
+rel_prob[8, :] = CNO_3
+rel_prob[9, :] = CNO_4
 
 labels = ['pp', 'pd', '33', '34', '17´', '17', 'p12', 'p13', 'p14', 'p15']
 
@@ -119,11 +117,12 @@ plt.figure(figsize=(10, 5))
 
 for i in range(10):
 
-	plt.plot(E, rel_prob[i, :], label=labels[i])
+	plt.plot(E / (eV * 1e3), rel_prob[i, :], label=labels[i])	# Converting from Joules to keV
 
-plt.xlabel('Energy [eV]')
-plt.ylabel('Relative probability')
+plt.xlabel('Energy [keV]')
+plt.ylabel('Normalized probability')
 plt.xscale('log')
+plt.xlim([1, 100])
 
 plt.legend()
 plt.savefig('figures/gamow.pdf')
