@@ -133,10 +133,10 @@ class EnergyProduction:
 		'''
 		Method to compute the energy production rate of the PP0 cycle
 		'''
-		n_i = self.number_density(self.rho)['n_p']		# Number density of protons
+		n_i = self.number_density(self.rho)['n_p']				# Number density of protons
 		n_k = n_i
-		Q_i , Q_k = self.Q['pp'], self.Q['pd']			# Energy released by fusion of protons to deuterium and deuterium and proton to helium-3
-		lmbda = self.proportionality_function(self.T)['pp']	# Reaction rate for two protons
+		Q_i , Q_k = self.Q['pp'], self.Q['pd']					# Energy released by fusion of protons to deuterium and deuterium and proton to helium-3
+		lmbda = self.proportionality_function(self.T)['pp']		# Reaction rate for two protons
 
 		r_ik = self.r(n_i, n_k, lmbda, self.rho)
 		eps = r_ik * (Q_i + Q_k)
@@ -150,15 +150,14 @@ class EnergyProduction:
 		'''
 		Method to compute the energy production rate of the PP1 cycle
 		'''
-		n_i = self.number_density(self.rho)['n_32He']		# Number density of helium-3
+		n_i = self.number_density(self.rho)['n_32He']			# Number density of helium-3
 		n_k = n_i 
-		Q_ik = self.Q['33']									# Energy released by fusing two helium-3 to helium-4
+		Q_ik = self.Q['33']										# Energy released by fusing two helium-3 to helium-4
 		lmbda = self.proportionality_function(self.T)['33']		# Reaction rate for two helium-3
 
 		r_ik = self.r(n_i, n_k, lmbda, self.rho)
 		eps = r_ik * Q_ik
 
-		self.PP1[0] = self.PP0[0]
 		self.PP1[1] = eps
 		self.r_PP1[0] = r_ik
 
@@ -181,8 +180,6 @@ class EnergyProduction:
 		'''
 		Setting the upper limit for T < 10^6 K
 		'''
-		self.PP2[0] = self.PP0[0]
-
 		if  self.T < 1e6:
 
 			lmbda_ik[1] = 1.57e-7 / (n_k[1] * N_A)
@@ -208,8 +205,6 @@ class EnergyProduction:
 		n_k = np.array([n['n_He'], n['n_p']])
 		Q_ik = np.array([self.Q['34'], self.Q['17']])
 		lmbda_ik = np.array([lmbda['34'], lmbda['17']])
-
-		self.PP3[0] = self.PP0[0]
 
 		for i in range(2):
 
@@ -249,7 +244,7 @@ class EnergyProduction:
 		of an element than the last step produces.
 		'''
 
-		first_32He = self.r_PP0[0]								# First production of helium-3
+		first_32He = self.r_PP0[0]									# First production of helium-3
 		common_32He = np.array([2 * self.r_PP1[0], self.r_PP2[0]])	# First reaction in PP1 requires 2 helium-3 and first of PP2 requires one
 		sum_32He = np.sum(common_32He)
 
@@ -263,8 +258,8 @@ class EnergyProduction:
 			self.PP3[1] *= R
 			self.r_PP3[0] *= R
 
-		first_74Be = self.r_PP2[0]							# First production of beryllium-7
-		common_74Be = np.array([self.r_PP2[1], self.r_PP3[1]])	# Second reaction in PP2 and PP3 requires beryllium-7
+		first_74Be = self.r_PP2[0]									# First production of beryllium-7
+		common_74Be = np.array([self.r_PP2[1], self.r_PP3[1]])		# Second reaction in PP2 and PP3 requires beryllium-7
 		sum_74Be = np.sum(common_74Be)
 
 		if first_74Be <= sum_74Be:
@@ -367,6 +362,6 @@ if __name__ == '__main__':
 	'''
 	Performing the sanity check.
 	'''
-	test = EnergyProduction(1e9, 1.62e5)
+	test = EnergyProduction(1.57e7, 1.62e5)
 	test.sanity_check()
 	
