@@ -46,7 +46,7 @@ Defining arrays that will contain the
 PP cranches and the CNO cycle.
 '''
 PP_branches = np.zeros((10, 2))
-PP_branches[0, :] = np.array([2 * H1, D2])				# H1+H1 -> D2+e(+)		(Removed positron mass, added annihilation energy)
+PP_branches[0, :] = np.array([2 * H1, D2])				# H1+H1 -> D2+e(+)		
 PP_branches[1, :] = np.array([D2 + H1, He3])			# D2+H1 -> He3
 PP_branches[2, :] = np.array([2 * He3, He4 + 2 * H1])	# He3+He3 -> He4+2H1
 PP_branches[3, :] = np.array([He3 + He4, Be7])			# He3+He4 -> Be7
@@ -54,7 +54,7 @@ PP_branches[4, :] = np.array([Be7, Li7])				# Be7+e -> Li7
 PP_branches[5, :] = np.array([Li7 + H1, 2 * He4])		# Li7+H1 -> 2He4
 PP_branches[6, :] = np.array([He3 + He4, Be7])			# He3+He4 -> Be7
 PP_branches[7, :] = np.array([Be7 + H1, B8])			# Be7+H1 -> B8
-PP_branches[8, :] = np.array([B8, Be8])					# B8 -> Be8+e(+) 		(Removed positron mass, added annihilation energy)
+PP_branches[8, :] = np.array([B8, Be8])					# B8 -> Be8+e(+) 		
 PP_branches[9, :] = np.array([Be8, 2 * He4])			# Be8 -> 2He4
 
 PP_energy_output = np.zeros(10)
@@ -91,10 +91,10 @@ CNO cycle
 '''
 CNO_cycle = np.zeros((6, 2))
 CNO_cycle[0, :] = np.array([C12 + H1, N13])			# C12+H1 -> N13
-CNO_cycle[1, :] = np.array([N13, C13])				# N13 -> C13+e(+)		(Removed positron mass, added annihilation energy)
+CNO_cycle[1, :] = np.array([N13, C13])				# N13 -> C13+e(+)		
 CNO_cycle[2, :] = np.array([C13 + H1, N14])			# C13+H1 -> N14
 CNO_cycle[3, :] = np.array([N14 + H1, O15])			# N14+H1 -> O15
-CNO_cycle[4, :] = np.array([O15, N15])				# O15 -> N15+e(+)		(Removed positron mass, added annihilation energy)
+CNO_cycle[4, :] = np.array([O15, N15])				# O15 -> N15+e(+)		
 CNO_cycle[5, :] = np.array([N15 + H1, C12 + He4])	# N15+H1 -> C12+He4
 
 CNO_energy_output = np.zeros(6)

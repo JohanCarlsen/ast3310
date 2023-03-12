@@ -6,3 +6,7 @@
 # Folders
 
 __pycache__/
+
+# Including reports
+
+!Modelling*
