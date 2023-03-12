@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import scipy.constants as const
 
 plt.rcParams['lines.linewidth'] = 1 	# Setting linewidth for lines in plots
+plt.rcParams['font.size'] = 18
 
 '''
 Defining constants
@@ -111,13 +112,18 @@ rel_prob[7, :] = CNO_2
 rel_prob[8, :] = CNO_3
 rel_prob[9, :] = CNO_4
 
-labels = ['pp', 'pd', '33', '34', '17´', '17', 'p12', 'p13', 'p14', 'p15']
+labels = ['pp', 'pd', '33', '34', "17'", '17', 'p12', 'p13', 'p14', 'p15']
 
-plt.figure(figsize=(10, 5))
+plt.figure(figsize=(10.6, 6))
 
 for i in range(10):
 
 	plt.plot(E / (eV * 1e3), rel_prob[i, :], label=labels[i])	# Converting from Joules to keV
+
+	idx = np.where(rel_prob[i, :] == np.max(rel_prob[i, :]))[0][0]
+	peak = E[idx] / (eV * 1e3)
+
+	print('Gamow peak for ' + labels[i] + f': {peak:.3f} keV')
 
 plt.xlabel('Energy [keV]')
 plt.ylabel('Normalized probability')
