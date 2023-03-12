@@ -43,7 +43,6 @@ plt.xlabel('Temperature [K]')
 plt.ylabel('Rel. energy production')
 plt.legend()
 
-# plt.grid(True, axis='x')
 plt.tight_layout()
 plt.savefig('figures/rel-energy-prod.pdf')
 plt.savefig('figures/rel-energy-prod.png')
