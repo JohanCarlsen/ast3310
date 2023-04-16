@@ -1,11 +1,14 @@
 import sys
 sys.path.append("../stellar-engines")
 from energy_production import EnergyProduction
+from cross_section import cross_section
 import numpy as np 
 import matplotlib.pyplot as plt
 from scipy.interpolate import RectBivariateSpline
 from scipy.integrate import solve_ivp
 import scipy.constants as const 
+
+plt.rcParams['lines.linewidth'] = 1
 
 # Extracting data from opacity.txt.
 log_R = np.loadtxt('opacity.txt', usecols=range(1, 20), max_rows=1)		# [gcm^-3 K^-3]
@@ -124,12 +127,15 @@ def integrate(variables, p=1e-2):
 
 	nabla_star = xi**2 + xi * K + nabla_ad
 
+	F_rad = -16 * const.sigma * T**4 / (3 * kappa * rho * H_P) * nabla_star
+	F_con = -rho * c_P * T * np.sqrt(g) * H_P**(-3/2) * (l_m/2)**2 * xi**3
+
 	star = EnergyProduction(T, rho)
 	star.run_all_cycles()
 	eps = np.sum(star.PP1) + np.sum(star.PP2) + np.sum(star.PP3) + star.CNO
 
-	dr = 1 / (4 * np.pi * r**2 * rho)
-	dP = -const.G * m / (4 * np.pi * r**4)
+	dr = 1 / (4 * const.pi * r**2 * rho)
+	dP = -const.G * m / (4 * const.pi * r**4)
 	dL = eps[0]
 
 	if nabla_stable > nabla_ad:
@@ -138,7 +144,7 @@ def integrate(variables, p=1e-2):
 
 	else:
 
-		dT = -3 * kappa * L / (256 * np.pi**2 * const.sigma * r**4 * T**3)
+		dT = -3 * kappa * L / (256 * const.pi**2 * const.sigma * r**4 * T**3)
 
 	dm_r = r / dr 
 	dm_P = P / dP 
@@ -154,7 +160,7 @@ def integrate(variables, p=1e-2):
 	T_new = T + dT * dm
 	M_new = m + dm
 
-	return M_new, r_new, P_new, L_new, T_new, rho
+	return M_new, r_new, P_new, L_new, T_new, rho, nabla_stable, nabla_star, F_rad, F_con
 
 
 # Fractional mass abundances 
@@ -178,8 +184,8 @@ avgRho_sun = 1.408e3 	# [kgm^-3]
 rho_0 = 1.42e-7 * avgRho_sun
 T_0 = 5770
 P_G = rho_0 / (mu * const.m_u) * const.k * T_0		# Gas pressure 
-P_rad = 4 * const.sigma / const.c * T_0**4 / 3 		# Radiative pressure 
-P_0 = P_G + P_rad
+P_rad = 4/3 * const.sigma * T_0**4 / const.c 		# Radiative pressure 
+P_0 = (P_G + P_rad)
 L_0 = L_sun
 M_0 = M_sun
 R_0 = R_sun
@@ -192,6 +198,14 @@ luminosity = [L_0]
 temperature = [T_0]
 density = [rho_0]
 
+# Gradient lists
+nabla_stable = []
+nabla_star = []
+
+# Flux lists
+rad_flux = []
+con_flux = []
+
 i = 0 
 while radius[i] > 0 and mass[i] > 0 and luminosity[i] > 0:
 	'''
@@ -199,7 +213,7 @@ while radius[i] > 0 and mass[i] > 0 and luminosity[i] > 0:
 	is no longer larger than zero. 
 	'''
 	variables = np.array([mass[i], radius[i], pressure[i], luminosity[i], temperature[i]])
-	M_new, r_new, P_new, L_new, T_new, rho = integrate(variables)
+	M_new, r_new, P_new, L_new, T_new, rho, nabla_stable_, nabla_star_, F_rad, F_con = integrate(variables)
 	
 	mass.append(M_new)
 	radius.append(r_new)
@@ -207,29 +221,56 @@ while radius[i] > 0 and mass[i] > 0 and luminosity[i] > 0:
 	luminosity.append(L_new)
 	temperature.append(T_new)
 	density.append(rho)
+
+	nabla_stable.append(nabla_stable_)
+	nabla_star.append(nabla_star_)
+	rad_flux.append(F_rad)
+	con_flux.append(F_con)
+
 	i += 1
 
 # Converting the lists to numpy-arrays
-M = np.array(mass[:-1])				# Mass
-R = np.array(radius[:-1])			# Radius
-P = np.array(pressure[:-1])			# Pressure 
-L = np.array(luminosity[:-1])		# Luminosity
-T = np.array(temperature[:-1])		# Temperature 
-rho = np.array(density[:-1])		# Density
+M = np.array(mass[:-1])						# Mass
+R = np.array(radius[:-1])					# Radius
+P = np.array(pressure[:-1])					# Pressure 
+L = np.array(luminosity[:-1])				# Luminosity
+T = np.array(temperature[:-1])				# Temperature 
+rho = np.array(density[:-1])				# Density
+grad_star = np.array(nabla_star)		# Star temperature gradient 
+grad_stable = np.array(nabla_stable)	# Stable temperature gradient
+F_rad = np.array(rad_flux)				# Radiative flux
+F_con = np.array(con_flux)				# Convective flux 
 
 
-x = np.linspace(0, len(M), len(M))
+iterations = np.linspace(0, len(M), len(M))
 plt.figure(figsize=(10,4))
-plt.plot(x, M/np.max(M), lw=1, ls='solid', color='black', label=r'$M/M_{max}$')
-plt.plot(x, R/np.max(R), lw=1, ls='dashed', color='black', label=r'$R/R_{max}$')
-plt.plot(x, L/np.max(L), lw=1, ls='dashdot', color='black', label=r'$L/L_{max}$')
-plt.plot(x, 0.05*np.ones(len(x)), lw=1, ls='dotted', color='black')
+plt.plot(iterations, M/np.max(M), ls='solid', color='black', label=r'$M/M_{max}$')
+plt.plot(iterations, R/np.max(R), ls='dashed', color='black', label=r'$R/R_{max}$')
+plt.plot(iterations, L/np.max(L), ls='dashdot', color='black', label=r'$L/L_{max}$')
+plt.plot(iterations, 0.05*np.ones(len(iterations)), ls='dotted', color='black')
 plt.legend()
 plt.xlabel('Iterations')
-plt.show()
+plt.tight_layout()
+plt.savefig('figures/convergence_check.pdf')
+plt.savefig('figures/convergence_check.png')
 
 print(f'Final values after {i} iterations:')
 print(f'M[-1]/M_0: {M[-1]/M_0*100:4.1f} %')
 print(f'R[-1]/R_0: {R[-1]/R_0*100:4.1f} %')
 print(f'L[-1]/L_0: {L[-1]/L_0*100:4.1f} %')
 
+plt.figure(figsize=(10,4))
+plt.plot(R/R_sun, grad_stable, ls='solid', color='black', label=r'$\nabla_{stable}$')
+plt.plot(R/R_sun, grad_star, ls='dotted', color='black', label=r'$\nabla^*$')
+plt.plot(R/R_sun, nabla_ad * np.ones(len(R)), ls=(0, (3, 5, 1, 5)), color='black', label=r'$\nabla_{ad}$')
+plt.ylabel(r'$\nabla$')
+plt.xlabel(r'$R/R_\odot$')
+plt.yscale('log')
+plt.legend()
+plt.tight_layout()
+plt.savefig('figures/gradients.pdf')
+plt.savefig('figures/gradients.png')
+
+plt.show()
+
+cross_section(R, L, F_con)
