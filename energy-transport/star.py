@@ -108,6 +108,7 @@ def integrate(variables, p=1e-2):
 	rho = get_density_pressure(T, pressure=P)
 	kappa = opacity(rho, T)
 	c_P = const.k / (mu * const.m_u) * (3/2 * rho + 1)
+	# c_P = 5/2 * const.k / (mu * const.m_u)
 	g = const.G * m / r**2
 	H_P = const.k * T / (mu * const.m_u * g)
 	l_m = H_P
@@ -236,10 +237,10 @@ P = np.array(pressure[:-1])					# Pressure
 L = np.array(luminosity[:-1])				# Luminosity
 T = np.array(temperature[:-1])				# Temperature 
 rho = np.array(density[:-1])				# Density
-grad_star = np.array(nabla_star)		# Star temperature gradient 
-grad_stable = np.array(nabla_stable)	# Stable temperature gradient
-F_rad = np.array(rad_flux)				# Radiative flux
-F_con = np.array(con_flux)				# Convective flux 
+grad_star = np.array(nabla_star)			# Star temperature gradient 
+grad_stable = np.array(nabla_stable)		# Stable temperature gradient
+F_rad = np.array(rad_flux)					# Radiative flux
+F_con = np.array(con_flux)					# Convective flux 
 
 
 iterations = np.linspace(0, len(M), len(M))
@@ -273,4 +274,4 @@ plt.savefig('figures/gradients.png')
 
 plt.show()
 
-cross_section(R, L, F_con)
+cross_section(R, L, F_con, savefig=True)
