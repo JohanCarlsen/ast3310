@@ -14,6 +14,7 @@ class EnergyProduction:
 
 		self.T = temperature
 		self.rho = density
+		self.eps_tot = 0
 
 		'''
 		Arrays will contain the energy production rate for each of 
@@ -135,11 +136,13 @@ class EnergyProduction:
 		'''
 		n_i = self.number_density(self.rho)['n_p']				# Number density of protons
 		n_k = n_i
-		Q_i , Q_k = self.Q['pp'], self.Q['pd']					# Energy released by fusion of protons to deuterium and deuterium and proton to helium-3
+		Q_i, Q_k = self.Q['pp'], self.Q['pd']					# Energy released by fusion of protons to deuterium and deuterium and proton to helium-3
 		lmbda = self.proportionality_function(self.T)['pp']		# Reaction rate for two protons
 
 		r_ik = self.r(n_i, n_k, lmbda, self.rho)
 		eps = r_ik * (Q_i + Q_k)
+
+		self.eps_tot += eps
 
 		self.PP0[0] = eps
 		self.r_PP0[0] = r_ik
@@ -157,6 +160,8 @@ class EnergyProduction:
 
 		r_ik = self.r(n_i, n_k, lmbda, self.rho)
 		eps = r_ik * Q_ik
+
+		self.eps_tot += eps
 
 		self.PP1[1] = eps
 		self.r_PP1[0] = r_ik
@@ -189,6 +194,7 @@ class EnergyProduction:
 			r_ik = self.r(n_i[i], n_k[i], lmbda_ik[i], self.rho)
 			eps = r_ik * Q_ik[i]
 
+			self.eps_tot += eps 
 			self.PP2[i+1] = eps
 			self.r_PP2[i] = r_ik
 
@@ -212,6 +218,7 @@ class EnergyProduction:
 			Q_ik[i] += (self.Q['8'] + self.Q['8_mark']) * (i == 1)
 			eps = r_ik * Q_ik[i]
 
+			self.eps_tot += eps * (i > 0)
 			self.PP3[i+1] = eps
 			self.r_PP3[i] = r_ik
 
@@ -233,6 +240,7 @@ class EnergyProduction:
 		r_ik = self.r(n_i, n_k, lmbda_ik, self.rho)
 		eps = r_ik * Q_ik
 
+		self.eps_tot += eps
 		self.CNO[0] = eps
 		self.r_CNO = r_ik
 
@@ -251,10 +259,13 @@ class EnergyProduction:
 		if first_32He <= sum_32He:
 
 			R = first_32He / sum_32He
+			self.eps_tot -= self.PP1[1] - self.PP1[1] * R
 			self.PP1[1] *= R
 			self.r_PP1[0] *= R
+			self.eps_tot -= self.PP2[1] - self.PP2[1] * R
 			self.PP2[1] *= R
 			self.r_PP2[0] *= R
+			self.eps_tot -= self.PP3[1] - self.PP3[1] * R
 			self.PP3[1] *= R
 			self.r_PP3[0] *= R
 
@@ -265,8 +276,10 @@ class EnergyProduction:
 		if first_74Be <= sum_74Be:
 
 			R = first_74Be / sum_74Be
+			self.eps_tot -= self.PP2[2] - self.PP2[2] * R
 			self.PP2[2] *= R
 			self.r_PP2[1] *= R
+			self.eps_tot -= self.PP3[2] - self.PP3[2] * R
 			self.PP3[2] *= R
 			self.r_PP3[1] *= R
 
@@ -277,12 +290,13 @@ class EnergyProduction:
 		if first_73Li <= sum_73Li:
 
 			R = first_73Li / sum_73Li
+			self.eps_tot -= self.PP2[3] - self.PP2[3] * R
 			self.PP2[3] *= R
 			self.r_PP2[2] *= R
 
 	########################################################################################################	
 
-	def run_all_cycles(self, temperature=None, density=None, PP0=None, PP1=None, PP2=None, PP3=None, CNO=None, r_PP0=None, r_PP1=None, r_PP2=None, r_PP3=None, r_CNO=None):
+	def run_all_cycles(self):
 		'''
 		This method runs each of the methods for computing the energy output
 		from all of the PP branches and the CNO cycle, before limiting the 
@@ -298,11 +312,23 @@ class EnergyProduction:
 		'''
 		Fixing the energy gained from the PP0 reaction in each of the branches.
 		'''
-		self.PP1[0] = self.PP0[0] * self.r_PP1[0] / (2 * self.r_PP0[0])
-		self.PP2[0] = self.PP0[0] * self.r_PP2[0] / (self.r_PP0[0])
-		self.PP3[0] = self.PP0[0] * self.r_PP3[0] / (self.r_PP0[0])
+		PP1_0 = self.PP0[0] * self.r_PP1[0] / (2 * self.r_PP0[0])
+		PP2_0 = self.PP0[0] * self.r_PP2[0] / (self.r_PP0[0])
+		PP3_0 = self.PP0[0] * self.r_PP3[0] / (self.r_PP0[0])
+
+		self.PP1[0] = PP1_0
+		self.PP2[0] = PP2_0
+		self.PP3[0] = PP3_0
 
 	########################################################################################################	
+
+	def get_total_energy(self):
+		'''
+		Returns the total energy produced from 
+		the PP branches and the CNO cycle.
+		'''
+
+		return self.eps_tot #/ const.N_A
 
 	def sanity_check(self):
 		'''
