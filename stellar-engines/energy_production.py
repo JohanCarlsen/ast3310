@@ -143,7 +143,7 @@ class EnergyProduction:
 		eps = r_ik * (Q_i + Q_k)
 
 		self.eps_tot += eps
-		# print(self.eps_tot)
+		
 		self.PP0[0] = eps
 		self.r_PP0[0] = r_ik
 
@@ -160,9 +160,6 @@ class EnergyProduction:
 
 		r_ik = self.r(n_i, n_k, lmbda, self.rho)
 		eps = r_ik * Q_ik
-
-		# self.eps_tot += eps
-		# print(self.eps_tot)
 
 		self.PP1[1] = eps
 		self.r_PP1[0] = r_ik
@@ -189,20 +186,15 @@ class EnergyProduction:
 		if  self.T < 1e6:
 
 			lmbda_ik[1] = 1.57e-7 / (n_k[1] * N_A)
-		# print(lmbda['34'])
+		
 		for i in range(3):
 
 			r_ik = self.r(n_i[i], n_k[i], lmbda_ik[i], self.rho)
 			eps = r_ik * Q_ik[i]
-			# print(n_i[i], n_k[i], lmbda_ik[i])
-			# print(r_ik, Q_ik[i], eps)
 
-			# self.eps_tot += eps 
 			self.PP2[i+1] = eps
 			self.r_PP2[i] = r_ik
-			# print(f'r_PP2[{i}]={r_ik}')
 
-		# print(self.eps_tot)
 	########################################################################################################
 
 	def pp3(self):
@@ -223,10 +215,8 @@ class EnergyProduction:
 			Q_ik[i] += (self.Q['8'] + self.Q['8_mark']) * (i == 1)
 			eps = r_ik * Q_ik[i]
 
-			# self.eps_tot += eps * (i > 0)
 			self.PP3[i+1] = eps
 			self.r_PP3[i] = r_ik 
-		# print(f'Eps after PP3: {self.eps_tot}')
 
 	########################################################################################################		
 
@@ -249,7 +239,6 @@ class EnergyProduction:
 		self.eps_tot += eps
 		self.CNO[0] = eps
 		self.r_CNO = r_ik
-		# print(f'Eps after CNO{self.eps_tot}')
 
 	########################################################################################################		
 
@@ -313,6 +302,10 @@ class EnergyProduction:
 		self.cno()
 		self.limit_production_rate()
 
+		'''
+		Summing up the total energy output from all the reactions. Note
+		that PP0 is added once, as well as the 34-reaction for PP2 and PP3.
+		'''
 		self.eps_tot += self.PP1[1] + self.PP2[1] + self.PP2[2] + self.PP2[3] + self.PP3[1] + self.CNO[0]
 		'''
 		Fixing the energy gained from the PP0 reaction in each of the branches.

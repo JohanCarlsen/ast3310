@@ -63,12 +63,11 @@ def cross_section(R, L, F_C, show_every=20, sanity=False, savefig=False):
     plt.xlabel('$R$')
     plt.ylabel('$R$')
     plt.title('Cross section of star')
-    plt.show()
 
     if savefig:
         if sanity:
-            fig.savefig('Figures/sanity_cross_section.png', dpi=300)
-            fig.savefig('Figures/sanity_cross_section.pdf', dpi=300)
+            fig.savefig('figures/sanity/sanity_cross_section.png', dpi=300)
+            fig.savefig('figures/sanity/sanity_cross_section.pdf', dpi=300)
         else:
-            fig.savefig('Figures/final_cross_section.png', dpi=300)
-            fig.savefig('Figures/final_cross_section.pdf', dpi=300)
+            fig.savefig('figures/final_cross_section.png', dpi=300)
+            fig.savefig('figures/final_cross_section.pdf', dpi=300)
