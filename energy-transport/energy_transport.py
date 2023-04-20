@@ -401,6 +401,6 @@ if __name__ == '__main__':
 	plt.savefig('figures/sanity/gradients.pdf')
 	plt.savefig('figures/sanity/gradients.png')
 
-	cross_section(r, L, F_con, savefig=True)
+	cross_section(r, L, F_con, sanity=True, savefig=True)
 
-	# plt.show()
+	plt.show()
