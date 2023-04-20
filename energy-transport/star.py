@@ -43,34 +43,36 @@ def opacity_sanity_check():
 	print('\nOPACITY SANITY CHECK FINISHED\n')
 
 
-def opacity(rho, T):
+def opacity(rho, T, get_warnings=False):
 	'''
 	Taked density and temperature in SI-units, and computes the	opacity with either
 	interpolating or extrapolating from the	spline object. A warning will be printed
 	if either of the values	for density or temperature is outside of the interval of
 	the spline,	ie. extrapolating.
 	'''
-	rho *= 1e8
+	rho *= 1e3
 	log_R = np.log10(rho / (T / 10**6)**3)
 	log_T = np.log10(T)
 
 	log_K = spline.ev(log_T, log_R)
-	K = 10**log_K * 1e-1 
+	K = 10**log_K * 1e-1
 
-	# if log_T < 3.75 or log_T > 8.7:
+	if get_warnings:
 
-		# print('\nWarning: Entered value for log(T) resulting in extrapolation.')
-		# print(f'Entered value for log(T): {log_T:g}')
+		if log_T < 3.75 or log_T > 8.7:
 
-	# if log_R < -8 or log_R > 1:
+			print('\nWarning: Entered value for log(T) resulting in extrapolation.')
+			print(f'Entered value for log(T): {log_T:g}')
 
-		# print('\nWarning: Entered value for log(R) resulting in extrapolation.')
-		# print(f'Entered value for log(R): {log_R:g}\n')	
+		if log_R < -8 or log_R > 1:
+
+			print('\nWarning: Entered value for log(R) resulting in extrapolation.')
+			print(f'Entered value for log(R): {log_R:g}\n')	
 
 	return K
 
 
-def get_density_pressure(T=5770., density=None, pressure=None):
+def get_density_pressure(T=5770., density=None, pressure=None, get_info=False):
 	'''
 	Method to calculate the density rho(P,T) or pressure P(rho,T), given 
 	the temperature T in Kelvin (default at 5770 K), and either rho or P.
@@ -88,7 +90,9 @@ def get_density_pressure(T=5770., density=None, pressure=None):
 		P_gas = density / (mu * const.m_u) * const.k * T
 		P = P_rad + P_gas 
 
-		# print(f"\nComputed pressure from get_density_pressure: {P:.2e} Pa\n")
+		if get_info:
+
+			print(f"\nComputed pressure from get_density_pressure: {P:.2e} Pa\n")
 
 		return P 
 
@@ -96,7 +100,9 @@ def get_density_pressure(T=5770., density=None, pressure=None):
 
 		rho = (pressure - P_rad) * mu * const.m_u / (const.k * T)
 
-		# print(f"\nComputed density from get_density_pressure: {rho:.2e} kg/m\u00b3\n")
+		if get_info:
+
+			print(f"\nComputed density from get_density_pressure: {rho:.2e} kg/m\u00b3\n")
 
 		return rho 
 	
@@ -121,7 +127,6 @@ def integrate(variables, p=1e-2, sanity_check=False):
 		rho = get_density_pressure(T, pressure=P)
 		kappa = opacity(rho, T)
 
-	# c_P = const.k / (mu * const.m_u) * (3/2 * rho + 1)
 	c_P = 5/2 * const.k / (mu * const.m_u)
 	g = const.G * m / r**2
 	H_P = const.k * T / (mu * const.m_u * g)
@@ -153,7 +158,7 @@ def integrate(variables, p=1e-2, sanity_check=False):
 
 	star = EnergyProduction(T, rho)
 	star.run_all_cycles()
-	eps = star.get_total_energy() * mu * const.m_u / const.N_A
+	eps = star.get_total_energy() #/ 4.3e2
 
 	if sanity_check:
 
@@ -220,7 +225,7 @@ def integrate(variables, p=1e-2, sanity_check=False):
 	T_new = T - dT * dm
 	M_new = m - dm
 
-	return M_new, r_new, P_new, L_new, T_new, rho, nabla_stable, nabla_star, F_rad, F_con
+	return M_new, r_new, P_new, L_new, T_new, rho, nabla_stable, nabla_star, F_rad, F_con, eps
 
 # Sun parameters 
 L_sun = 3.846e26		# [W]
@@ -245,9 +250,6 @@ sanity_R = 0.84 * R_sun
 sanity_M = 0.99 * M_sun
 
 sanity_variables = np.array([sanity_M, sanity_R, sanity_T])
-
-# integrate(sanity_variables, sanity_check=True)
-# exit()
 
 # Initial parameters 
 rho_0 = 1.42e-7 * avgRho_sun
@@ -275,17 +277,18 @@ nabla_star = []
 rad_flux = []
 con_flux = []
 
+epsilon = []
+
 i = 0 
 while mass[i] > 0 and radius[i] > 0 \
 				  and luminosity[i] > 0 \
 				  and i < 4.5e3:
-# while radius[i] > 0 and mass[i] > 0 and luminosity[i] > 0:
 	'''
 	The while-loop runs until the radius
 	is no longer larger than zero. 
 	'''
 	variables = np.array([mass[i], radius[i], pressure[i], luminosity[i], temperature[i]])
-	M_new, r_new, P_new, L_new, T_new, rho, nabla_stable_, nabla_star_, F_rad, F_con = integrate(variables)
+	M_new, r_new, P_new, L_new, T_new, rho, nabla_stable_, nabla_star_, F_rad, F_con, eps = integrate(variables)
 	
 	mass.append(M_new)
 	radius.append(r_new)
@@ -298,6 +301,8 @@ while mass[i] > 0 and radius[i] > 0 \
 	nabla_star.append(nabla_star_)
 	rad_flux.append(F_rad)
 	con_flux.append(F_con)
+
+	epsilon.append(eps)
 
 	i += 1
 
@@ -326,12 +331,16 @@ plt.tight_layout()
 plt.savefig('figures/convergence_check.pdf')
 plt.savefig('figures/convergence_check.png')
 
+plt.figure()
+plt.plot(R/np.max(R), epsilon)
+plt.yscale('log')
+
 plt.figure(figsize=(10,4))
-plt.plot(iterations, T/np.max(T), ls='dashed', color='black', label=r'$T/T_{max}$')
-plt.plot(iterations, P/np.max(P), ls='dotted', color='black', label=r'$P/P_{max}$')
-plt.plot(iterations, rho/np.max(rho), ls=(0, (3, 5, 1, 5)), color='black', label=r'$\rho/\rho_{max}$')
+plt.plot(R/np.max(R), T/np.max(T), ls='dashed', color='black', label=r'$T/T_{max}$')
+plt.plot(R/np.max(R), P/np.max(P), ls='dotted', color='black', label=r'$P/P_{max}$')
+plt.plot(R/np.max(R), rho/np.max(rho), ls=(0, (3, 5, 1, 5)), color='black', label=r'$\rho/\rho_{max}$')
 plt.legend()
-plt.xlabel('Iterations')
+plt.xlabel(r'$R/R_{max}$')
 plt.tight_layout()
 plt.savefig('figures/T-P-rho.png')
 plt.savefig('figures/T-P-rho.pdf')
