@@ -50,7 +50,7 @@ def opacity(rho, T, get_warnings=False):
 	if either of the values	for density or temperature is outside of the interval of
 	the spline,	ie. extrapolating.
 	'''
-	rho *= 1e3
+	rho *= 1e-3
 	log_R = np.log10(rho / (T / 10**6)**3)
 	log_T = np.log10(T)
 
@@ -328,8 +328,8 @@ plt.plot(iterations, 0.05*np.ones(len(iterations)), ls='dotted', color='black')
 plt.legend()
 plt.xlabel('Iterations')
 plt.tight_layout()
-plt.savefig('figures/convergence_check.pdf')
-plt.savefig('figures/convergence_check.png')
+# plt.savefig('figures/convergence_check.pdf')
+# plt.savefig('figures/convergence_check.png')
 
 plt.figure()
 plt.plot(R/np.max(R), epsilon)
@@ -364,4 +364,4 @@ plt.savefig('figures/gradients.png')
 
 plt.show()
 
-cross_section(R, L, F_con, savefig=False)
+cross_section(R, L, F_con, savefig=True)
