@@ -1,7 +1,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def cross_section(R, L, F_C, show_every=20, sanity=False, savefig=False):
+def cross_section(R, L, F_C, show_every=20, sanity=False, savefig=False, title=None):
     """
     plot cross section of star
     :param R: radius, array
@@ -62,12 +62,23 @@ def cross_section(R, L, F_C, show_every=20, sanity=False, savefig=False):
               ['Convection outside core','Radiation outside core','Radiation inside core','Convection inside core'])
     plt.xlabel('$R$')
     plt.ylabel('$R$')
-    plt.title('Cross section of star')
+
+    if title is not None:
+
+        plt.title('Cross section of star with ' + title)
+
+    else:
+
+        plt.title('Cross section of star')
 
     if savefig:
         if sanity:
             fig.savefig('figures/sanity/sanity_cross_section.png', dpi=300)
             fig.savefig('figures/sanity/sanity_cross_section.pdf', dpi=300)
         else:
-            fig.savefig('figures/final_cross_section.png', dpi=300)
-            fig.savefig('figures/final_cross_section.pdf', dpi=300)
+            if title is not None:
+                fig.savefig('figures/testing/cross-sections/cross-'+title+'.png')
+                fig.savefig('figures/testing/cross-sections/cross-'+title+'.pdf')
+            else:
+                fig.savefig('figures/final_cross_section.png', dpi=300)
+                fig.savefig('figures/final_cross_section.pdf', dpi=300)

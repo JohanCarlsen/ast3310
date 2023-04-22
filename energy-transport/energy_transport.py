@@ -262,7 +262,7 @@ class Star:
 
 		return m_new, r_new, P_new, L_new, T_new, rho, nabla_stable, nabla_star, F_rad, F_con, eps
 
-	def integrate_equtations(self, p):
+	def integrate_equtations(self, p, output=True):
 		'''
 		Runs evolve_one_step until either of the
 		mass, radius, or luminosity reaches zero.
@@ -285,14 +285,18 @@ class Star:
 
 			if abs(self.m[i] - self.m[i-1]) < 1e15:
 
-				print('\n Warning: Step length dm converged to zero!\n')
+				if output:
+
+					print('\nWarning: Step length dm converged to zero!')
 
 				break
 
-		print(f'Final values after {i-1} iterations:')
-		print(f'M/M_0: {self.m[-2]/self.m[0]*100:4.1f} %. M = {self.m[-2]:.3e} kg')
-		print(f'R/R_0: {self.r[-2]/self.r[0]*100:4.1f} %. R = {self.r[-2]:.3e} m')
-		print(f'L/L_0: {self.L[-2]/self.L[0]*100:4.1f} %. L = {self.L[-2]:.3e} W')
+		if output:
+			
+			print(f'\nFinal values after {i-1} iterations:')
+			print(f'M/M_0: {self.m[-2]/self.m[0]*100:4.1f} %. M = {self.m[-2]:.3e} kg')
+			print(f'R/R_0: {self.r[-2]/self.r[0]*100:4.1f} %. R = {self.r[-2]:.3e} m')
+			print(f'L/L_0: {self.L[-2]/self.L[0]*100:4.1f} %. L = {self.L[-2]:.3e} W')
 
 
 	def get_arrays(self):
@@ -402,5 +406,56 @@ if __name__ == '__main__':
 	plt.savefig('figures/sanity/gradients.png')
 
 	cross_section(r, L, F_con, sanity=True, savefig=True)
+
+	fig, axes = plt.subplots(2, 2, figsize=(16 * 2/3, 9 * 2/3))
+	ax = axes.flatten()
+
+	title_list = [r'$2R_0, 5R_0, 10R_0$', r'$2T_0, 5T_0, 10T_0$', \
+				  r'$10^2\rho_0, 10^3\rho_0, 10^4\rho_0$', r'$10^2P_0, 10^3P_0, 10^4P_0$']
+
+	label_list = [r'$M/M_{max}$', r'$R/R_{max}$', r'$L/L_{max}$']
+
+	print_list = ['R', 'T', 'rho', 'P']
+
+	for i in range(4):
+
+		if i < 2: 
+
+			factor_list = [2, 5, 10]
+			factor_print = ['2', '5', '10']
+
+		else:
+
+			factor_list = [1e2, 1e3, 1e4]
+			factor_print = ['1e2', '1e3', '1e4']
+
+		for j in range(len(factor_list)):
+
+			parameter_list = [R_0, T_0, rho_0, P_0]
+			parameter_list[i] *= factor_list[j]
+			R, T, rho, P = parameter_list
+
+			test = Star(M_0, R, P, L_0, T)
+
+			print(f'\nIntegrating for ' + factor_print[j] + print_list[i])
+
+			test.integrate_equtations(p=1e-2)
+
+			m, r, P, L, T, rho, nabla_star, nabla_stable, F_rad, F_con, eps = test.get_arrays()
+
+			cross_section(r, L, F_con, title=factor_print[j] + print_list[i], savefig=True)
+
+			iterations = np.linspace(0, len(m), len(m))		
+
+			ax[i].plot(iterations, m/np.max(m), ls='solid', color='black')
+			ax[i].plot(iterations, r/np.max(r), ls='dashed', color='black')
+			ax[i].plot(iterations, L/np.max(L), ls='dashdot', color='black')
+
+		ax[i].set_title(title_list[i])
+		ax[i].legend(label_list)
+
+	fig.tight_layout()
+	plt.savefig('figures/testing/variable-params.pdf')
+	plt.savefig('figures/testing/variable-params.png')
 
 	plt.show()
