@@ -29,6 +29,7 @@ class Star:
 		self.L = [self.L_0]; self.T = [self.T_0]; self.rho = [];
 		self.nabla_star = []; self.nabla_stable = []
 		self.F_rad = []; self.F_con = []; self.epsilon = []
+		self.PP1 = []; self.PP2 = []; self.PP3 = []; self.CNO = []
 
 		# Fractional mass abundances 
 		self.X = .7 			# Fraction of hydrogen 
@@ -144,7 +145,7 @@ class Star:
 
 			return rho
 
-	def evolve_one_step(self, variables, p, sanity_check=False):
+	def evolve_one_step(self, variables, p, sanity_check=False, include_cycles=False):
 		'''
 		Evolve the parameters for mass, radius, pressure,
 		luminosity, and temperature one step length, using
@@ -260,9 +261,17 @@ class Star:
 		T_new = T - dT * dm
 		m_new = m - dm
 
-		return m_new, r_new, P_new, L_new, T_new, rho, nabla_stable, nabla_star, F_rad, F_con, eps
+		if include_cycles:
 
-	def integrate_equtations(self, p, output=True):
+			PP1, PP2, PP3, CNO = np.sum(star.PP1), np.sum(star.PP2), np.sum(star.PP3), np.sum(star.CNO)
+
+			return m_new, r_new, P_new, L_new, T_new, rho, nabla_stable, nabla_star, F_rad, F_con, eps, PP1, PP2, PP3, CNO
+
+		else:
+
+			return m_new, r_new, P_new, L_new, T_new, rho, nabla_stable, nabla_star, F_rad, F_con, eps
+
+	def integrate_equtations(self, p, output=True, include_cycles=False):
 		'''
 		Runs evolve_one_step until either of the
 		mass, radius, or luminosity reaches zero.
@@ -274,12 +283,25 @@ class Star:
 		while self.m[i] > 0 and self.r[i] > 0 and self.L[i] > 0:
 
 			variables = np.array([self.m[i], self.r[i], self.P[i], self.L[i], self.T[i]])
-			m_i, r_i, P_i, L_i, T_i, rho_i, stable_i, star_i, F_rad_i, F_con_i, eps_i = self.evolve_one_step(variables, p)
 
-			self.m.append(m_i); self.r.append(r_i); self.P.append(P_i); self.L.append(L_i)
-			self.T.append(T_i); self.rho.append(rho_i); self.nabla_stable.append(stable_i)
-			self.nabla_star.append(star_i); self.F_rad.append(F_rad_i)
-			self.F_con.append(F_con_i); self.epsilon.append(eps_i)
+			if include_cycles:
+
+				m_i, r_i, P_i, L_i, T_i, rho_i, stable_i, star_i, F_rad_i, F_con_i, eps_i, PP1_i, PP2_i, PP3_i, CNO_i = self.evolve_one_step(variables, p, include_cycles=True)
+
+				self.m.append(m_i); self.r.append(r_i); self.P.append(P_i); self.L.append(L_i)
+				self.T.append(T_i); self.rho.append(rho_i); self.nabla_stable.append(stable_i)
+				self.nabla_star.append(star_i); self.F_rad.append(F_rad_i)
+				self.F_con.append(F_con_i); self.epsilon.append(eps_i)	
+				self.PP1.append(PP1_i); self.PP2.append(PP2_i); self.PP3.append(PP3_i); self.CNO.append(CNO_i)
+
+			else:
+
+				m_i, r_i, P_i, L_i, T_i, rho_i, stable_i, star_i, F_rad_i, F_con_i, eps_i = self.evolve_one_step(variables, p)
+
+				self.m.append(m_i); self.r.append(r_i); self.P.append(P_i); self.L.append(L_i)
+				self.T.append(T_i); self.rho.append(rho_i); self.nabla_stable.append(stable_i)
+				self.nabla_star.append(star_i); self.F_rad.append(F_rad_i)
+				self.F_con.append(F_con_i); self.epsilon.append(eps_i)
 
 			i += 1
 
@@ -299,7 +321,7 @@ class Star:
 			print(f'L/L_0: {self.L[-2]/self.L[0]*100:4.1f} %. L = {self.L[-2]:.3e} W')
 
 
-	def get_arrays(self):
+	def get_arrays(self, include_cycles=False):
 		'''
 		Convert the lists to arrays and returns them. Since the 
 		function integrate_equations runs until the parameter 
@@ -312,7 +334,16 @@ class Star:
 		F_rad = np.array(self.F_rad); F_con = np.array(self.F_con)
 		eps = np.array(self.epsilon)
 
-		return m, r, P, L, T, rho, star, stable, F_rad, F_con, eps
+		if include_cycles:
+
+			PP1 = np.array(self.PP1); PP2 = np.array(self.PP2)
+			PP3 = np.array(self.PP2); CNO = np.array(self.CNO)
+
+			return m, r, P, L, T, rho, star, stable, F_rad, F_con, eps, PP1, PP2, PP3, CNO
+
+		else:
+
+			return m, r, P, L, T, rho, star, stable, F_rad, F_con, eps
 
 	def sanity_check(self):
 		'''
@@ -325,6 +356,9 @@ class Star:
 if __name__ == '__main__':
 
 	plt.rcParams['lines.linewidth'] = 1
+	plt.rcParams['font.size'] = 12
+	plt.rcParams['text.usetex'] = True
+	plt.rcParams['font.family'] = 'Helvetica'
 
 	# Sun parameters 
 	L_sun = 3.846e26		# [W]
@@ -454,8 +488,8 @@ if __name__ == '__main__':
 		ax[i].set_title(title_list[i])
 		ax[i].legend(label_list)
 
-	fig.tight_layout()
-	plt.savefig('figures/testing/variable-params.pdf')
-	plt.savefig('figures/testing/variable-params.png')
+		fig.tight_layout()
+		plt.savefig('figures/testing/variable-params.pdf')
+		plt.savefig('figures/testing/variable-params.png')
 
 	plt.show()
