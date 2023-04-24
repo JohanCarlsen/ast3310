@@ -441,7 +441,7 @@ if __name__ == '__main__':
 
 	cross_section(r, L, F_con, sanity=True, savefig=True)
 
-	fig, axes = plt.subplots(2, 2, figsize=(16 * 2/3, 9 * 2/3))
+	fig1, axes = plt.subplots(2, 2, figsize=(16 * 2/3, 9 * 2/3))
 	ax = axes.flatten()
 
 	title_list = [r'$2R_0, 5R_0, 10R_0$', r'$2T_0, 5T_0, 10T_0$', \
@@ -488,8 +488,8 @@ if __name__ == '__main__':
 		ax[i].set_title(title_list[i])
 		ax[i].legend(label_list)
 
-		fig.tight_layout()
-		plt.savefig('figures/testing/variable-params.pdf')
-		plt.savefig('figures/testing/variable-params.png')
+	fig1.tight_layout()
+	fig1.savefig('figures/testing/variable-params.pdf')
+	fig1.savefig('figures/testing/variable-params.png')
 
 	plt.show()
