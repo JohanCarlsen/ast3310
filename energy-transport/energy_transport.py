@@ -337,7 +337,7 @@ class Star:
 		if include_cycles:
 
 			PP1 = np.array(self.PP1); PP2 = np.array(self.PP2)
-			PP3 = np.array(self.PP2); CNO = np.array(self.CNO)
+			PP3 = np.array(self.PP3); CNO = np.array(self.CNO)
 
 			return m, r, P, L, T, rho, star, stable, F_rad, F_con, eps, PP1, PP2, PP3, CNO
 
