@@ -182,16 +182,6 @@ class Star:
 
 			nabla_stable = 3 * kappa * rho * H_P * L / (64 * const.sigma * T**4 * const.pi * r**2)
 
-		# coeffs = [l_m**2/U, 1, K, (self.nabla_ad - nabla_stable)]
-		# roots = np.roots(coeffs)
-		# real_root_idx = np.where(roots.imag == 0)[0][0]
-		# xi = roots[real_root_idx].real
-
-		# nabla_star = xi**2 + xi * K + self.nabla_ad
-
-		# F_rad = 16 * const.sigma * T**4 / (3 * kappa * rho * H_P) * nabla_star
-		# F_con = rho * self.c_P * T * np.sqrt(g) * H_P**(-3/2) * (l_m/2)**2 * xi**3
-
 		star = EnergyProduction(T, rho)
 		star.run_all_cycles()
 		eps = star.get_total_energy()
@@ -205,6 +195,15 @@ class Star:
 			nabla_star_exact = 0.4
 			F_con_over_exact = 0.88
 			F_rad_over_exact = 0.12
+
+			coeffs = [l_m**2/U, 1, K, (self.nabla_ad - nabla_stable)]
+			roots = np.roots(coeffs)
+			real_root_idx = np.where(roots.imag == 0)[0][0]
+			xi = roots[real_root_idx].real
+
+			nabla_star = xi**2 + xi * K + self.nabla_ad
+			F_con = rho * self.c_P * T * np.sqrt(g) * H_P**(-3/2) * (l_m/2)**2 * xi**3
+			F_rad = 16 * const.sigma * T**4 / (3 * kappa * rho * H_P) * nabla_star
 
 			v = np.sqrt(g/H_P) * l_m/2 * xi
 			H_P *= 1e-6
