@@ -34,7 +34,7 @@ mu = 1. / (2 * X + Y_He3 + (3/4 * Y) + (4/7 * Z_Li7) + (5/7 * Z_Be7) + (4/7 * Z_
 nabla_ad = 2/5 	# Adiabatic temperature gradient for ideal gas
 
 # Initial parameters 
-rho_0 = 1.42e-7 * avgRho_sun * 30
+rho_0 = 1.42e-7 * avgRho_sun * 90
 T_0 = 5770
 P_G = rho_0 / (mu * const.m_u) * const.k * T_0		# Gas pressure 
 P_rad = 4/3 * const.sigma * T_0**4 / const.c 		# Radiative pressure 
@@ -45,7 +45,7 @@ R_0 = R_sun
 
 variable_params = np.array([M_0, R_0, L_0, T_0])
 
-M_fit, R_fit, L_fit, T_fit = variable_params * [1, 0.9, 1.2, .8]
+M_fit, R_fit, L_fit, T_fit = variable_params * [.95, 1.6, .55, 2]
 
 best = Star(M_fit, R_fit, P_0, L_fit, T_fit)
 best.integrate_equtations(p=1e-2, include_cycles=True)
@@ -55,11 +55,15 @@ m, r, P, L, T, rho, nabla_star, nabla_stable, F_rad, F_con, eps, PP1, PP2, PP3, 
 r_plot = r/R_sun
 ticks = np.linspace(r_plot[-1], r_plot[0], 6)
 
-F_con_fraction = F_con / np.sum(F_rad + F_con)
-F_rad_fraction = F_rad / np.sum(F_rad + F_con)
+F_con_fraction = F_con / (F_rad + F_con)
+F_rad_fraction = F_rad / (F_rad + F_con)
 
 eps_max = PP1 + PP2 + PP3 + CNO
-# eps_max += (1 * (eps_max == 0))
+plot_idx = np.where(eps_max != 0)
+PP1_rel = PP1[plot_idx] / eps_max[plot_idx]
+PP2_rel = PP2[plot_idx] / eps_max[plot_idx]
+PP3_rel = PP3[plot_idx] / eps_max[plot_idx]
+CNO_rel = CNO[plot_idx] / eps_max[plot_idx]
 
 L_core = L[-1]/L[0]
 R_core = r[(L < .995 * L[0])][0] / r[0]
@@ -107,17 +111,17 @@ fig.savefig('figures/flux-fraction.pdf')
 fig.savefig('figures/flux-fraction.png')
 
 fig, ax = plt.subplots(figsize=(10, 4))
-ax.plot(r_plot[(eps_max != 0)], np.flip(PP1/eps_max)[(eps_max != 0)], ls='dashed', color='black', label=r'$\epsilon_{PP1}/\epsilon_{max}$')
-ax.plot(r_plot[(eps_max != 0)], np.flip(PP2/eps_max)[(eps_max != 0)], ls='dashdot', color='black', label=r'$\epsilon_{PP2}/\epsilon_{max}$')
-ax.plot(r_plot[(eps_max != 0)], np.flip(PP3/eps_max)[(eps_max != 0)], ls=(0, (5, 10)), color='black', label=r'$\epsilon_{PP3}/\epsilon_{max}$')
-ax.plot(r_plot[(eps_max != 0)], np.flip(CNO/eps_max)[(eps_max != 0)], ls='dotted', color='black', label=r'$\epsilon_{CNO}/\epsilon_{max}$')
-ax.plot(r_plot[(eps_max != 0)], (eps/np.max(eps))[(eps_max != 0)], ls='solid', color='black', label=r'$L/\epsilon_{max}$')
-ax.legend()
-ax.set_xticks(ticks)
+ax.plot(r_plot[plot_idx], PP1_rel, ls='dashed', color='black', label=r'$\epsilon_{PP1}/\epsilon_{max}$')
+ax.plot(r_plot[plot_idx], PP2_rel, ls='dashdot', color='black', label=r'$\epsilon_{PP2}/\epsilon_{max}$')
+ax.plot(r_plot[plot_idx], PP3_rel, ls=(0, (5, 10)), color='black', label=r'$\epsilon_{PP3}/\epsilon_{max}$')
+ax.plot(r_plot[plot_idx], CNO_rel, ls='solid', color='black', label=r'$\epsilon_{CNO}/\epsilon_{max}$')
+ax.plot(r_plot[plot_idx], (eps/np.max(eps))[plot_idx], ls='dotted', color='black', label=r'$\epsilon/\epsilon_{max}$')
 ax2 = ax.twiny()
 ax2.set_xticks(np.linspace(T[0], T[-1], 12))
 ax2.invert_xaxis()
 ax2.set_xlabel('Temperature [K]')
+ax.legend()
+ax.set_xticks(ticks)
 ax.set_xlabel(r'$R/R_\odot$')
 ax.set_ylabel(r'Rel. energy')
 fig.tight_layout()

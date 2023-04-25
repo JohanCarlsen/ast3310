@@ -182,15 +182,15 @@ class Star:
 
 			nabla_stable = 3 * kappa * rho * H_P * L / (64 * const.sigma * T**4 * const.pi * r**2)
 
-		coeffs = [l_m**2/U, 1, K, (self.nabla_ad - nabla_stable)]
-		roots = np.roots(coeffs)
-		real_root_idx = np.where(roots.imag == 0)[0][0]
-		xi = roots[real_root_idx].real
+		# coeffs = [l_m**2/U, 1, K, (self.nabla_ad - nabla_stable)]
+		# roots = np.roots(coeffs)
+		# real_root_idx = np.where(roots.imag == 0)[0][0]
+		# xi = roots[real_root_idx].real
 
-		nabla_star = xi**2 + xi * K + self.nabla_ad
+		# nabla_star = xi**2 + xi * K + self.nabla_ad
 
-		F_rad = 16 * const.sigma * T**4 / (3 * kappa * rho * H_P) * nabla_star
-		F_con = rho * self.c_P * T * np.sqrt(g) * H_P**(-3/2) * (l_m/2)**2 * xi**3
+		# F_rad = 16 * const.sigma * T**4 / (3 * kappa * rho * H_P) * nabla_star
+		# F_con = rho * self.c_P * T * np.sqrt(g) * H_P**(-3/2) * (l_m/2)**2 * xi**3
 
 		star = EnergyProduction(T, rho)
 		star.run_all_cycles()
@@ -240,12 +240,23 @@ class Star:
 
 		if nabla_stable > self.nabla_ad:
 
+
+			coeffs = [l_m**2/U, 1, K, (self.nabla_ad - nabla_stable)]
+			roots = np.roots(coeffs)
+			real_root_idx = np.where(roots.imag == 0)[0][0]
+			xi = roots[real_root_idx].real
+
+			nabla_star = xi**2 + xi * K + self.nabla_ad
+			F_con = rho * self.c_P * T * np.sqrt(g) * H_P**(-3/2) * (l_m/2)**2 * xi**3
 			dT = nabla_star * T/P * dP
 
 		else:
 
 			dT = -3 * kappa * L / (256 * const.pi**2 * const.sigma * r**4 * T**3)
 			nabla_star = nabla_stable
+			F_con = 0.
+
+		F_rad = 16 * const.sigma * T**4 / (3 * kappa * rho * H_P) * nabla_star
 
 		dm_r = r / abs(dr) 
 		dm_P = P / abs(dP) 
