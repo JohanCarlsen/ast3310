@@ -11,3 +11,5 @@ __pycache__/
 # Including reports
 
 !Modelling*
+!*interiors.pdf
+!README.txt

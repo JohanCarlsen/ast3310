@@ -145,7 +145,7 @@ class Star:
 
 			return rho
 
-	def evolve_one_step(self, variables, p, sanity_check=False, include_cycles=False):
+	def evolve_one_step(self, variables, p, sanity_check=False, include_cycles=False, output=False):
 		'''
 		Evolve the parameters for mass, radius, pressure,
 		luminosity, and temperature one step length, using
@@ -239,6 +239,10 @@ class Star:
 
 		if nabla_stable > self.nabla_ad:
 
+			if output:
+
+				print(f'Convectively unstable at R = {r:.3e} m')
+
 
 			coeffs = [l_m**2/U, 1, K, (self.nabla_ad - nabla_stable)]
 			roots = np.roots(coeffs)
@@ -326,9 +330,9 @@ class Star:
 		if output:
 			
 			print(f'\nFinal values after {i-1} iterations:')
-			print(f'M/M_0: {self.m[-2]/self.m[0]*100:7.3f} %. M = {self.m[-2]:.3e} kg')
-			print(f'R/R_0: {self.r[-2]/self.r[0]*100:7.3f} %. R = {self.r[-2]:.3e} m')
-			print(f'L/L_0: {self.L[-2]/self.L[0]*100:7.3f} %. L = {self.L[-2]:.3e} W')
+			print(f'M/M_0: {self.m[-2]/self.m[0]*100:8.3e} %. M = {self.m[-2]:.3e} kg')
+			print(f'R/R_0: {self.r[-2]/self.r[0]*100:8.3e} %. R = {self.r[-2]:.3e} m')
+			print(f'L/L_0: {self.L[-2]/self.L[0]*100:8.3e} %. L = {self.L[-2]:.3e} W')
 
 
 	def get_arrays(self, include_cycles=False):
@@ -403,8 +407,6 @@ if __name__ == '__main__':
 	test.integrate_equtations(p=1e-2)
 
 	m, r, P, L, T, rho, nabla_star, nabla_stable, F_rad, F_con, eps = test.get_arrays()
-	kappa = test.opacity(rho, T)
-	plt.plot(r/np.max(r), kappa/np.max(kappa))
 
 	iterations = np.linspace(0, len(m), len(m))
 
