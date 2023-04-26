@@ -326,9 +326,9 @@ class Star:
 		if output:
 			
 			print(f'\nFinal values after {i-1} iterations:')
-			print(f'M/M_0: {self.m[-2]/self.m[0]*100:4.1f} %. M = {self.m[-2]:.3e} kg')
-			print(f'R/R_0: {self.r[-2]/self.r[0]*100:4.1f} %. R = {self.r[-2]:.3e} m')
-			print(f'L/L_0: {self.L[-2]/self.L[0]*100:4.1f} %. L = {self.L[-2]:.3e} W')
+			print(f'M/M_0: {self.m[-2]/self.m[0]*100:7.3f} %. M = {self.m[-2]:.3e} kg')
+			print(f'R/R_0: {self.r[-2]/self.r[0]*100:7.3f} %. R = {self.r[-2]:.3e} m')
+			print(f'L/L_0: {self.L[-2]/self.L[0]*100:7.3f} %. L = {self.L[-2]:.3e} W')
 
 
 	def get_arrays(self, include_cycles=False):
@@ -403,6 +403,8 @@ if __name__ == '__main__':
 	test.integrate_equtations(p=1e-2)
 
 	m, r, P, L, T, rho, nabla_star, nabla_stable, F_rad, F_con, eps = test.get_arrays()
+	kappa = test.opacity(rho, T)
+	plt.plot(r/np.max(r), kappa/np.max(kappa))
 
 	iterations = np.linspace(0, len(m), len(m))
 
@@ -451,7 +453,7 @@ if __name__ == '__main__':
 
 	cross_section(r, L, F_con, sanity=True, savefig=True)
 
-	fig1, axes = plt.subplots(2, 2, figsize=(16 * 2/3, 9 * 2/3))
+	fig1, axes = plt.subplots(2, 2, figsize=(12, 5), sharex=True, sharey=True)
 	ax = axes.flatten()
 
 	title_list = [r'$2R_0, 5R_0, 10R_0$', r'$2T_0, 5T_0, 10T_0$', \
@@ -491,14 +493,20 @@ if __name__ == '__main__':
 
 			iterations = np.linspace(0, len(m), len(m))		
 
-			ax[i].plot(iterations, m/np.max(m), ls='solid', color='black')
-			ax[i].plot(iterations, r/np.max(r), ls='dashed', color='black')
-			ax[i].plot(iterations, L/np.max(L), ls='dashdot', color='black')
+			ax[i].plot(r/np.max(r), m/np.max(m), ls='solid', color='black')
+			ax[i].plot(r/np.max(r), r/np.max(r), ls='dashed', color='black')
+			ax[i].plot(r/np.max(r), L/np.max(L), ls='dashdot', color='black')
 
+		ax[i].tick_params(direction='inout', top=True, right=True)
 		ax[i].set_title(title_list[i])
 		ax[i].legend(label_list)
 
-	fig1.tight_layout()
+	ax[0].tick_params(labeltop=True)
+	ax[1].tick_params(labeltop=True, labelright=True)
+	ax[3].tick_params(labelright=True)
+	ax[2].set_xlabel(r'$R/R_{max}$')
+	ax[3].set_xlabel(r'$R/R_{max}$')
+	fig1.subplots_adjust(hspace=0, wspace=0)
 	fig1.savefig('figures/testing/variable-params.pdf')
 	fig1.savefig('figures/testing/variable-params.png')
 

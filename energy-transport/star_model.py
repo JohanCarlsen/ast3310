@@ -9,11 +9,15 @@ from scipy.interpolate import RectBivariateSpline
 from scipy.integrate import solve_ivp
 import scipy.constants as const 
 from scipy.stats import chisquare as chi
+from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes
+from mpl_toolkits.axes_grid1.inset_locator import mark_inset
 
 plt.rcParams['lines.linewidth'] = 1
 plt.rcParams['font.size'] = 12
 plt.rcParams['text.usetex'] = True
 plt.rcParams['font.family'] = 'Helvetica'
+plt.rcParams['xtick.direction'] = 'inout'
+plt.rcParams['ytick.direction'] = 'inout'
 
 # Sun parameters 
 L_sun = 3.846e26		# [W]
@@ -53,7 +57,7 @@ best.integrate_equtations(p=1e-2, include_cycles=True)
 m, r, P, L, T, rho, nabla_star, nabla_stable, F_rad, F_con, eps, PP1, PP2, PP3, CNO = best.get_arrays(include_cycles=True)
 
 r_plot = r/R_sun
-ticks = np.linspace(r_plot[-1], r_plot[0], 6)
+ticks = np.linspace(r_plot[-1], r_plot[0], 9)
 
 F_con_fraction = F_con / (F_rad + F_con)
 F_rad_fraction = F_rad / (F_rad + F_con)
@@ -70,45 +74,70 @@ R_core = r[(L < .995 * L[0])][0] / r[0]
 con_width_range = r[np.logical_and(F_con > 0, r > r[0]/2)]
 con_width = (con_width_range[0] - con_width_range[-1]) / r[0]
 
-print(f'\nCore luminosity:\t{L_core*100:7.2e} % of L_0')
-print(f'Core radius:\t\t{R_core*100:7.2e} % of R_0')
-print(f'Surface con. width:\t{con_width*100:7.2e} % of R_0\n')
+print(f'\nCore luminosity:\t{L_core*100:8.3e} % of L_0')
+print(f'Core radius:\t\t{R_core*100:8.3e} % of R_0')
+print(f'Surface con. width:\t{con_width*100:8.3e} % of R_0')
+print(f'Final temperature:\t{T[-1]:8.3e} K\n')
 
-gridspec = dict(hspace=0, height_ratios=[1, 1, .4, 1])
-fig, axes = plt.subplots(4, 1, figsize=(9, 7), gridspec_kw=gridspec)
+with plt.rc_context({'font.size': 15, 'figure.figsize': (8, 6)}):
 
-axes[0].plot(r_plot, T, ls='solid', color='black', label=r'$T$')
-axes[0].legend()
-axes[0].set_xticklabels([])
+	gridspec = dict(hspace=0, height_ratios=[1, 1, .4, 1])
+	fig, axes = plt.subplots(4, 1, gridspec_kw=gridspec)
 
-axes[1].plot(r_plot, m/M_sun, ls='solid', color='black', label=r'$M/M_\odot$')
-axes[1].plot(r_plot, L/L_sun, ls='dashed', color='black', label=r'$L/L_\odot$')
-axes[1].legend()
-axes[1].set_xticks(ticks)
-axes[1].set_xlabel(r'$R/R_\odot$')
+	axes[0].plot(r_plot, T, ls='solid', color='black', label=r'$T$')
+	axes[0].legend()
+	axes[0].set_xticklabels([])
 
-axes[2].set_visible(False)
+	axes[1].plot(r_plot, m/M_sun, ls='solid', color='black', label=r'$M/M_\odot$')
+	axes[1].plot(r_plot, L/L_sun, ls='dashed', color='black', label=r'$L/L_\odot$')
+	axes[1].legend()
+	axes[1].set_xticks(ticks)
+	axes[1].set_xlabel(r'$R/R_\odot$')
 
-axes[3].plot(r_plot, rho/avgRho_sun, ls='solid', color='black', label=r'$\rho/\bar{\rho}_\odot$')
-axes[3].plot(r_plot, P, ls='dashed', color='black', label=r'$P$')
-axes[3].legend()
-axes[3].set_xscale('log')
-axes[3].set_yscale('log')
-axes[3].set_xlabel(r'$\log_{10}(R/R_\odot)$')
-fig.savefig('figures/best_fit_T-M-L-rho-P.pdf')
-fig.savefig('figures/best_fit_T-M-L-rho-P.png')
+	axes[2].set_visible(False)
 
-fig, ax = plt.subplots(figsize=(10, 4))
+	axes[3].plot(r_plot, rho/avgRho_sun, ls='solid', color='black', label=r'$\rho/\bar{\rho}_\odot$')
+	axes[3].plot(r_plot, P, ls='dashed', color='black', label=r'$P$')
+	axes[3].legend()
+	axes[3].set_xscale('log')
+	axes[3].set_yscale('log')
+	axes[3].set_xlabel(r'$\log_{10}(R/R_\odot)$')
+	fig.savefig('figures/best_fit_T-M-L-rho-P.pdf')
+	fig.savefig('figures/best_fit_T-M-L-rho-P.png')
 
-ax.plot(r_plot, F_con_fraction, ls='solid', color='black', label=r'$F_{con}$')
-ax.plot(r_plot, F_rad_fraction, ls='dashed', color='black', label=r'$F_{rad}$')
-ax.legend()
-ax.set_xlabel(r'$R/R_\odot$')
-ax.set_ylabel(r'Fraction of $F_i$')
-ax.set_xticks(ticks)
-fig.tight_layout()
-fig.savefig('figures/flux-fraction.pdf')
-fig.savefig('figures/flux-fraction.png')
+	fig, ax = plt.subplots()
+
+	ax.plot(r_plot, F_con_fraction, ls='solid', color='black', label=r'$F_{con}$')
+	ax.plot(r_plot, F_rad_fraction, ls='dashed', color='black', label=r'$F_{rad}$')
+	ax.legend()
+	ax.set_xlabel(r'$R/R_\odot$')
+	ax.set_ylabel(r'Fraction of $F_i$')
+	ax.set_xticks(ticks)
+	fig.tight_layout()
+	fig.savefig('figures/flux-fraction.pdf')
+	fig.savefig('figures/flux-fraction.png')
+
+	fig, ax = plt.subplots()
+	ax.plot(r_plot, nabla_star, ls='solid', color='black', label=r'$\nabla^*$')
+	ax.plot(r_plot, nabla_stable, ls='dashed', color='black', label=r'$\nabla_{stable}$')
+	ax.plot(r_plot, nabla_ad * np.ones(len(r_plot)), ls='dotted', color='black', label=r'$\nabla_{ad}$')
+	ax.legend()
+	ax.set_xticks(ticks)
+	ax.set_xlabel(r'$R/R_\odot$')
+	ax.set_ylabel(r'$\nabla_i$')
+	ax.set_ylim([1e-1, 1e5])
+	ax.set_yscale('log')
+	fig.tight_layout()
+	fig.savefig('figures/gradients-final.pdf')
+	fig.savefig('figures/gradients-final.png')
+
+	fig, ax = plt.subplots()
+	ax.plot(P*10, rho*1e-3, color='black')
+	ax.set_xlabel(r'$P$ [cgs]')
+	ax.set_ylabel(r'$\rho$ [cgs]')
+	ax.set_xscale('log')
+	ax.set_yscale('log')
+
 
 fig, ax = plt.subplots(figsize=(10, 4))
 ax.plot(r_plot[plot_idx], PP1_rel, ls='dashed', color='black', label=r'$\epsilon_{PP1}/\epsilon_{max}$')
@@ -116,6 +145,13 @@ ax.plot(r_plot[plot_idx], PP2_rel, ls='dashdot', color='black', label=r'$\epsilo
 ax.plot(r_plot[plot_idx], PP3_rel, ls=(0, (5, 10)), color='black', label=r'$\epsilon_{PP3}/\epsilon_{max}$')
 ax.plot(r_plot[plot_idx], CNO_rel, ls='solid', color='black', label=r'$\epsilon_{CNO}/\epsilon_{max}$')
 ax.plot(r_plot[plot_idx], (eps/np.max(eps))[plot_idx], ls='dotted', color='black', label=r'$\epsilon/\epsilon_{max}$')
+axins = zoomed_inset_axes(ax, 5, loc='lower center')
+axins.plot(r_plot[plot_idx], CNO_rel, ls='solid', color='black')
+axins.plot(r_plot[plot_idx], (eps/np.max(eps))[plot_idx], ls='dotted', color='black')
+axins.set_xlim([-.025, .025])
+axins.set_ylim([-.025, .025])
+axins.tick_params(labelleft=False, labelbottom=False)
+mark_inset(ax, axins, loc1=2, loc2=3)
 ax2 = ax.twiny()
 ax2.set_xticks(np.linspace(T[0], T[-1], 12))
 ax2.invert_xaxis()
@@ -128,17 +164,7 @@ fig.tight_layout()
 fig.savefig('figures/rel-energy.pdf')
 fig.savefig('figures/rel-energy.png')
 
-fig, ax = plt.subplots(figsize=(10,4))
-ax.plot(r_plot, nabla_star, ls='solid', color='black', label=r'$\nabla^*$')
-ax.plot(r_plot, nabla_stable, ls='dashed', color='black', label=r'$\nabla_{stable}$')
-ax.plot(r_plot, nabla_ad * np.ones(len(r_plot)), ls='dotted', color='black', label=r'$\nabla_{ad}$')
-ax.legend()
-ax.set_xlabel(r'$R/R_\odot$')
-ax.set_ylabel(r'$\nabla_i$')
-ax.set_yscale('log')
-fig.tight_layout()
-fig.savefig('figures/gradients-final.pdf')
-fig.savefig('figures/gradients-final.png')
+
 
 cross_section(r, L, F_con, savefig=True)
 
