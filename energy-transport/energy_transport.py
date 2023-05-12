@@ -237,12 +237,11 @@ class Star:
 		dP = -const.G * m / (4 * const.pi * r**4)
 		dL = eps
 
-		if nabla_stable > self.nabla_ad:
+		if nabla_stable > self.nabla_ad: 	# Convectively unstable 
 
 			if output:
 
 				print(f'Convectively unstable at R = {r:.3e} m')
-
 
 			coeffs = [l_m**2/U, 1, K, (self.nabla_ad - nabla_stable)]
 			roots = np.roots(coeffs)
