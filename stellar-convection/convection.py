@@ -336,7 +336,7 @@ test.add_gaussian_pertubation()
 
 vis = FVis.FluidVisualiser()
 # vis.save_data(180, test.hydro_solver, rho=test.rho.T, u=test.u.T, w=test.w.T, e=test.e_int.T, P=test.P.T, T=test.T.T, sim_fps=2)
-vis.animate_2D('e', folder='FVis_output_2023-05-12_15-15')
+vis.animate_2D('u', folder='FVis_output_2023-05-12_15-15')
 
 # fig, ax = plt.subplots()
 # im = ax.imshow(test.T.T, cmap='plasma')
