@@ -189,7 +189,7 @@ class Convection2D:
 		phi = variable
 		dphidx = np.zeros((self.N_x, self.N_y))
 
-		for i in range(Nx - 1):
+		for i in range(Nx):
 
 			for j in range(1, self.N_y - 2):
 
@@ -205,7 +205,7 @@ class Convection2D:
 		phi = variable
 		dphidy = np.zeros((self.N_x, self.N_y))
 
-		for i in range(self.N_x - 1):
+		for i in range(self.N_x):
 
 			for j in range(1, self.N_y - 2):
 
@@ -223,7 +223,7 @@ class Convection2D:
 		v = velocity_comp
 		dphidx = np.zeros((self.N_x, self.N_y))
 
-		for i in range(Nx - 1):
+		for i in range(Nx):
 
 			for j in range(1, self.N_y - 2):
 
@@ -247,7 +247,7 @@ class Convection2D:
 		v = velocity_comp
 		dphidy = np.zeros((self.N_x, self.N_y))
 
-		for i in range(self.N_x - 1):
+		for i in range(self.N_x):
 
 			for j in range(1, self.N_y - 2):
 

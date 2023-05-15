@@ -4,6 +4,7 @@
 *.txt
 *.DS_Store
 *.mov
+FVis_output*
 
 # Folders
 
