@@ -104,8 +104,8 @@ class Convection2D:
 		self.u[:, -1] = (- self.u[:, -3] + 4 * self.u[:, -2]) / 3
 
 		# Vertical boundary for energy and density
-		self.e_int[:, -1] = 3 * self.P[:, -1] / 3
-		self.e_int[:, 0] = 3 * self.P[:, 0] / 3
+		self.e_int[:, -1] = 3 * self.P[:, -1] / 2
+		self.e_int[:, 0] = 3 * self.P[:, 0] / 2
 		self.rho[:, -1] = 2 * self.e_int[:, -1] / 3 * self.mu * self.m_u / (self.k_b * self.T[:, -1])
 		self.rho[:, 0] = 2 * self.e_int[:, 0] / 3 * self.mu * self.m_u / (self.k_b * self.T[:, 0])
 
@@ -335,8 +335,8 @@ test.initialise()
 test.add_gaussian_pertubation()
 
 vis = FVis.FluidVisualiser()
-# vis.save_data(180, test.hydro_solver, rho=test.rho.T, u=test.u.T, w=test.w.T, e=test.e_int.T, P=test.P.T, T=test.T.T, sim_fps=2)
-vis.animate_2D('u', folder='FVis_output_2023-05-12_15-15')
+vis.save_data(180, test.hydro_solver, rho=test.rho.T, u=test.u.T, w=test.w.T, e=test.e_int.T, P=test.P.T, T=test.T.T,)
+vis.animate_2D('u', height=4.6, cmap='plasma')
 
 # fig, ax = plt.subplots()
 # im = ax.imshow(test.T.T, cmap='plasma')
