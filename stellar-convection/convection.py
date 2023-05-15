@@ -179,7 +179,16 @@ class Convection2D:
 
 		delta = np.max(max_vals)
 		# self.dt = self.p / delta
-		self.dt = 0.5
+		# self.dt = 0.5
+		dt = self.p / delta 
+
+		if dt < 0.5:
+
+			self.dt = 0.5
+
+		else: 
+
+			self.dt = dt
 
 	def central_x(self, variable):
 		'''
@@ -335,7 +344,10 @@ test.initialise()
 test.add_gaussian_pertubation()
 
 vis = FVis.FluidVisualiser()
-vis.save_data(180, test.hydro_solver, rho=test.rho.T, u=test.u.T, w=test.w.T, e=test.e_int.T, P=test.P.T, T=test.T.T,)
+vis.save_data(180, test.hydro_solver, rho=test.rho.T, u=test.u.T, \
+										w=test.w.T, e=test.e_int.T, \
+										P=test.P.T, T=test.T.T,)
+
 vis.animate_2D('u', height=4.6, cmap='plasma')
 
 # fig, ax = plt.subplots()
