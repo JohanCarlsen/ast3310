@@ -3,7 +3,9 @@ import FVis3 as FVis
 import matplotlib.pyplot as plt 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import astropy.constants as const 
+from matplotlib.animation import FuncAnimation, PillowWriter
 from random import randint
+from time import perf_counter
 
 class Convection2D:
 
@@ -32,7 +34,7 @@ class Convection2D:
 		self.L_sun = const.L_sun.value 	# Solar luminosity [W]
 
 		# Constant gravitational acceleration in the y direction 
-		self.g = np.array([0., - self.G * self.M_sun / self.R_sun**2]) 	# [m/s^2]
+		self.g = self.G * self.M_sun / self.R_sun**2 	# [m/s^2]
 
 		# Courant-Friedrichs-Lewy condition constant
 		self.p = 0.1
@@ -47,9 +49,6 @@ class Convection2D:
 		self.w = np.zeros((self.N_x, self.N_y))			# Vertical velocity component [m/s]
 		self.rho = np.zeros((self.N_x, self.N_y)) 		# Density [kg/m^3]
 		self.e_int = np.zeros((self.N_x, self.N_y)) 	# Internal energy [J/m^3]
-
-		# Defining the box 
-		self.box = np.zeros((self.N_x, self.N_y)) 
 
 	def initialise(self):
 		'''
@@ -79,7 +78,7 @@ class Convection2D:
 			dP = - self.G * M * self.rho[:, i] / R**2
 			dT = self.nabla  * self.T[:, i] / self.P[:, i] * dP
 
-			self.T[:, i-1] = self.T[:, i] - dT * self.dy 
+			self.T[:, i-1] = self.T[:, i] - dT * self.dy + self.gauss[:, i-1]
 			self.P[:, i-1] = self.P[:, i] - dP * self.dy 
 
 			self.e_int[:, i-1] = 3 * self.P[:, i-1] / 2 
@@ -104,8 +103,12 @@ class Convection2D:
 		self.u[:, -1] = (- self.u[:, -3] + 4 * self.u[:, -2]) / 3
 
 		# Vertical boundary for energy and density
-		self.e_int[:, -1] = 3 * self.P[:, -1] / 2
-		self.e_int[:, 0] = 3 * self.P[:, 0] / 2
+		self.e_int[:, -1] = - self.dy * self.G * self.rho[:, -1] / self.R_sun**2 \
+							+ 1/3 * (4 * self.e_int[:, -2] - self.e_int[:, -3])
+
+		self.e_int[:, 0] = - self.dy * self.G * self.rho[:, 0] / self.R_bot**2 \
+							+ 1/3 * (4 * self.e_int[:, 1] - self.e_int[:, 2])
+
 		self.rho[:, -1] = 2 * self.e_int[:, -1] / 3 * self.mu * self.m_u / (self.k_b * self.T[:, -1])
 		self.rho[:, 0] = 2 * self.e_int[:, 0] / 3 * self.mu * self.m_u / (self.k_b * self.T[:, 0])
 
@@ -140,7 +143,7 @@ class Convection2D:
 		dRhoWdy = self.upwind_y(rhoW, self.u)
 		dPdy = self.central_y(self.P)
 
-		self.dRhoWdt = - rhoW * (dudx + dwdy) - self.u * dRhoWdx - self.w * dRhoWdy - dPdy + self.rho * self.g[1]
+		self.dRhoWdt = - rhoW * (dudx + dwdy) - self.u * dRhoWdx - self.w * dRhoWdy - dPdy + self.rho * self.g
 
 		# Energy equation 
 		dudx = self.central_x(self.u)
@@ -150,26 +153,21 @@ class Convection2D:
 
 		self.dedt = - (self.e_int + self.P) * (dudx + dwdy) - self.u * dedx - self.w * dedy
 
-		self.boundary_condition()
-
-		rho, e, u, w = self.rho, self.e_int, self.u, self.w
-
 		# Making sure there are no zero-divisions 
-		rho[(rho == 0)] = 1
-		e[(e == 0)] = 1
-		rhoU[(rhoU == 0)] = 1
-		rhoW[(rhoW == 0)] = 1
+		non_zero_u = self.u != 0
+		non_zero_w = self.w != 0
 
-		rho[(abs(rho) > 5)] = 1
-		rhoU[(abs(rhoU) > 5)] = 1
-		rhoW[(abs(rhoW) > 5)] = 1
-		e[(abs(e) > 5)] = 1
-		u[(abs(u) > 5)] = 1
-		w[(abs(w) > 5)] = 1
+		rho, e, u, w = self.rho.copy(), self.e_int.copy(), self.u.copy(), self.w.copy()
+
+		rel_rhoU = np.abs(self.dRhoUdt[non_zero_u] / rhoU[non_zero_u])
+		rel_rhoW = np.abs(self.dRhoWdt[non_zero_w] / rhoW[non_zero_w])
+
+		if len(rel_rhoU) == 0 or len(rel_rhoW) == 0:
+
+			rel_rhoU = 0 
+			rel_rhoW = 0
 
 		rel_rho = np.abs(self.drhodt / rho)
-		rel_rhoU = np.abs(self.dRhoUdt / rhoU)
-		rel_rhoW = np.abs(self.dRhoWdt / rhoW)
 		rel_e = np.abs(self.dedt / e)
 		rel_x = np.abs(self.u / self.dx)
 		rel_y = np.abs(self.w / self.dy)
@@ -178,13 +176,16 @@ class Convection2D:
 							 np.max(rel_e), np.max(rel_x), np.max(rel_y)])
 
 		delta = np.max(max_vals)
-		# self.dt = self.p / delta
-		# self.dt = 0.5
+
+		if delta == 0:
+
+			delta = 1
+		
 		dt = self.p / delta 
 
-		if dt < 0.5:
+		if dt < 0.01:
 
-			self.dt = 0.5
+			self.dt = 0.01
 
 		else: 
 
@@ -194,16 +195,12 @@ class Convection2D:
 		'''
 		Central difference scheme in x direction.
 		'''
-		Nx = self.N_x 
 		phi = variable
-		dphidx = np.zeros((self.N_x, self.N_y))
 
-		for i in range(Nx):
+		phi_before = np.roll(phi, -1, axis=0)
+		phi_after = np.roll(phi, 1, axis=0)
 
-			for j in range(1, self.N_y - 2):
-
-				dphi_ij = (phi[(i+1) % Nx, j] - phi[(i + Nx - 1) % Nx, j]) / (2 * self.dx)
-				dphidx[i, j] = dphi_ij
+		dphidx = (phi_after - phi_before) / (2 * self.dx)
 
 		return dphidx
 
@@ -212,14 +209,11 @@ class Convection2D:
 		Central difference scheme in y direction.
 		'''
 		phi = variable
-		dphidy = np.zeros((self.N_x, self.N_y))
 
-		for i in range(self.N_x):
+		phi_before = np.roll(phi, 1, axis=-1)
+		phi_after = np.roll(phi, -1, axis=-1)
 
-			for j in range(1, self.N_y - 2):
-
-				dphi_ij = (phi[i, j+1] - phi[i, j-1]) / (2 * self.dy)
-				dphidy[i, j] = dphi_ij
+		dphidy = (phi_after - phi_before) / (2 * self.dy)
 
 		return dphidy 
 
@@ -227,24 +221,16 @@ class Convection2D:
 		'''
 		Upwind difference scheme in x direction.
 		'''
-		Nx = self.N_x 
 		phi = variable
 		v = velocity_comp
+
 		dphidx = np.zeros((self.N_x, self.N_y))
 
-		for i in range(Nx):
+		phi_before = np.roll(phi, -1, axis=0)
+		phi_after = np.roll(phi, 1, axis=0)
 
-			for j in range(1, self.N_y - 2):
-
-				if v[i, j] >= 0:
-
-					dphi_ij = (phi[i, j] - phi[(i + Nx - 1) % Nx, j]) / self.dx 
-
-				else: 
-
-					dphi_ij = (phi[(i+1) % Nx, j] - phi[i, j]) / self.dx 
-
-				dphidx[i, j] = dphi_ij
+		dphidx[v >= 0] = (phi[v >= 0] - phi_after[v >= 0]) / self.dx 
+		dphidx[v < 0] = (phi_before[v < 0] - phi[v < 0]) / self.dx
 
 		return dphidx
 
@@ -254,21 +240,14 @@ class Convection2D:
 		'''
 		phi = variable
 		v = velocity_comp
+
 		dphidy = np.zeros((self.N_x, self.N_y))
 
-		for i in range(self.N_x):
+		phi_before = np.roll(phi, -1, axis=-1)
+		phi_after = np.roll(phi, 1, axis=-1)
 
-			for j in range(1, self.N_y - 2):
-
-				if v[i, j] >= 0:
-
-					dphi_ij = (phi[i, j] - phi[i, j-1]) / self.dy 
-
-				else:
-
-					dphi_ij = (phi[i, j+1] - phi[i, j]) / self.dy 
-
-				dphidy[i, j] = dphi_ij
+		dphidy[v >= 0] = (phi[v >= 0] - phi_before[v >= 0]) / self.dy 
+		dphidy[v < 0] = (phi_after[v < 0] - phi[v < 0]) / self.dy
 
 		return dphidy
 
@@ -276,15 +255,13 @@ class Convection2D:
 		'''
 		Solver of the hydrodynamic equations
 		'''
-		self.timestep()		# Update timestep 
+		self.boundary_condition()	# Set boundary conditions
+		self.timestep()				# Update timestep 
 
 		e_new = self.e_int + self.dedt * self.dt
 		rho_new = self.rho + self.drhodt * self.dt 
 		u_new = (self.rho * self.u + self.dRhoUdt * self.dt) / rho_new 
 		w_new = (self.rho * self.w + self.dRhoWdt * self.dt) / rho_new
-
-		self.T[:, -1] = self.T_top
-		self.P[:, -1] = self.P_top
 
 		R = self.R_sun
 		M = self.M_sun
@@ -293,7 +270,7 @@ class Convection2D:
 
 			dM = 4 * np.pi * R**2 * self.rho[:, i]
 			dP = - self.G * M * self.rho[:, i] / R**2
-			dT = self.nabla  * self.T[:, i] / self.P[:, i] * dP
+			dT = self.nabla * self.T[:, i] / self.P[:, i] * dP
 
 			self.T[:, i-1] = self.T[:, i] - dT * self.dy 
 			self.P[:, i-1] = self.P[:, i] - dP * self.dy 
@@ -302,6 +279,7 @@ class Convection2D:
 			R -= self.dy
 
 		self.e_int[:], self.rho[:], self.u[:], self.w[:] = e_new, rho_new, u_new, w_new
+		self.T[:], self.P[:] = self.T, self.P
 
 		return self.dt
 
@@ -311,19 +289,19 @@ class Convection2D:
 		values will	be inserted in the arrays for u and w.
 		'''
 		dt = self.hydro_solver()
-		num = randint(1, 10)
+		num = randint(1, 3)
 		self.w[:] = num 
 		self.u[:] = num 
 
 		return dt
 
-	def add_gaussian_pertubation(self, amplitude=5e4, x_0=150, y_0=50, stdev_x=50, stdev_y=50):
+	def create_gaussian_pertubation(self, amplitude=0.05, x_0=150, y_0=50, stdev_x=25, stdev_y=25):
 		'''
-		Create a 2D gaussian. Default amplitude is 5e4, and the standard devaiations
-		are both 50. The center of the gaussian will be in the center of the box.
-		This will add the gaussian pertubation to the initial temperature.
+		Create a 2D gaussian. Default amplitude is 5 percent of initial temperature,
+		and the standard devaiations are both 25. The center of the gaussian will be
+		in the center of the box. This will add the gaussian pertubation to the initial temperature.
 		'''
-		A, sigma_x, sigma_y = amplitude, stdev_x, stdev_y
+		A, sigma_x, sigma_y = amplitude * 5778, stdev_x, stdev_y
 		
 		for i in range(self.N_x):
 
@@ -336,21 +314,108 @@ class Convection2D:
 
 				self.gauss[i, j] = gauss_ij
 
-		self.T += self.gauss
-
-
 test = Convection2D()
+test.create_gaussian_pertubation()
 test.initialise()
-test.add_gaussian_pertubation()
+
+total_time = 0
+end_time = 60
+time_list = [0]
+u_list = [test.u]
+w_list = [test.w]
+T_list = [test.T]
+P_list = [test.P]
+rho_list = [test.rho]
+e_list = [test.e_int]
+
+i = 0
+
+# start = perf_counter()
+
+# while time_list[i] <= end_time:
+
+# 	dt = test.hydro_solver()
+
+# 	total_time += dt 
+# 	time_list.append(total_time)
+# 	u_list.append(test.u)
+# 	w_list.append(test.w)
+# 	T_list.append(test.T)
+# 	P_list.append(test.P)
+# 	rho_list.append(test.rho)
+# 	e_list.append(test.e_int)
+
+# 	i += 1
+
+# stop = perf_counter()
+# comp_time = stop - start 
+# print(f'Total computation time for {end_time} s in {i-1} iterations: {comp_time//60:2.0f} min {comp_time%60:4.1f} s.')
+
+# t = np.array(time_list)
+# u = np.array(u_list).T
+# w = np.array(w_list).T
+# e = np.array(e_list).T
+# T = np.array(T_list).T
+# P = np.array(P_list).T 
+# rho = np.array(rho_list).T
+
+# fig, ax = plt.subplots(figsize=(12.8, 7.2))
+
+# ax.set_title(f'Time: t = {t[0]:4.1f} s')
+# im = ax.imshow(u[:, :, 0], origin='lower', norm=plt.Normalize(np.min(u), np.max(u)), cmap='plasma', animated=True)
+# divider = make_axes_locatable(ax)
+# cax = divider.append_axes('right', size='3%', pad=0.04)
+# fig.colorbar(im, cax=cax)
+
+# def func(i):
+
+# 	ax.clear()
+# 	ax.set_title(f'Time: t = {t[i]:4.1f} s')
+# 	ax.imshow(u[:, :, i], origin='lower', norm=plt.Normalize(np.min(u), np.max(u)), cmap='plasma', animated=True)
+# 	# im.set_array(u[:, :, i])
+
+# start = perf_counter()
+# ani = FuncAnimation(fig, func, interval=1)
+# # ani.save('test.gif', writer=PillowWriter(fps=144, bitrate=3400), dpi=100)
+# stop = perf_counter()
+# anim_time = stop - start 
+# # print(f'It took {anim_time//60:2.0f} min {anim_time%60:4.1f} s to create and save the animation.')
+
+# plt.show()
+
+
+# ax.set_title('i=0, t=0')
+# im = ax.contourf(test.u.T, levels=100, cmap='plasma')#, vmin=0, vmax=3e6)
+# divider = make_axes_locatable(ax)
+# cax = divider.append_axes('right', size='5%', pad=0.05)
+# cbar = fig.colorbar(im, cax=cax)
+# cbar.ax.invert_yaxis()
+
+# def animate(i):
+
+# 	ax.clear()
+# 	dt = test.hydro_solver()
+# 	time = (i+1) * dt
+# 	ax.set_title(f'i={i}, t={time:5.2f} s')
+# 	ax.contourf(test.u.T, levels=100, cmap='plasma')#, vmin=0, vmax=3e6)
+
+# ani = FuncAnimation(fig, animate, frames=9000)
+# ani.save('test.gif', writer=PillowWriter(fps=50))
 
 vis = FVis.FluidVisualiser()
-vis.save_data(180, test.hydro_solver, rho=test.rho.T, u=test.u.T, \
-										w=test.w.T, e=test.e_int.T, \
-										P=test.P.T, T=test.T.T,)
+# vis.save_data(80, test.hydro_solver, rho=test.rho.T, u=test.u.T, \
+# 										w=test.w.T, e=test.e_int.T, \
+# 										P=test.P.T, T=test.T.T)
 
-vis.animate_2D('u', height=4.6, cmap='plasma')
+# vis.animate_2D('w', video_name='w-80-secs', height=4.6, cmap='plasma', folder='FVis_output_80_seconds_simulation', save=True)
+# vis.animate_2D('u', video_name='u-80-secs', height=4.6, cmap='plasma', folder='FVis_output_80_seconds_simulation', save=True)
+# vis.animate_2D('T', video_name='T-80-secs', height=4.6, cmap='plasma', folder='FVis_output_80_seconds_simulation', save=True)
+# vis.animate_2D('P', video_name='P-80-secs', height=4.6, cmap='plasma', folder='FVis_output_80_seconds_simulation', save=True)
+# vis.animate_2D('e', video_name='e-80-secs', height=4.6, cmap='plasma', folder='FVis_output_80_seconds_simulation', save=True)
+# vis.animate_2D('rho', video_name='rho-80-secs', height=4.6, cmap='plasma', folder='FVis_output_80_seconds_simulation', save=True)
+# vis.plot_avg('rho', folder='FVis_output_2023-05-17_10-49')
 
-# fig, ax = plt.subplots()
+# fig, ax = plt.subplots(figsize=(10, 4.6))
 # im = ax.imshow(test.T.T, cmap='plasma')
 # divider = make_axes_locatable(ax)
 # cax = divider.append_axes("right", size="5%", pad=.05)

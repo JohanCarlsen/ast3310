@@ -5,6 +5,8 @@
 *.DS_Store
 *.mov
 FVis_output*
+*.gif
+*.mp4
 
 # Folders
 

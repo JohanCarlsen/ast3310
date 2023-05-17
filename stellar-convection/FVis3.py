@@ -37,7 +37,7 @@ class FluidVisualiser:
         self.use_blit = blit
         self.hasSaved = False
 
-        mpl.rcParams.update({'font.size': self.fontsize})
+        mpl.rcParams.update({'font.size': self.fontsize, 'lines.linewidth': 1})
 
     def save_data(self, sim_time, update_func, rho=None, u=None, w=None, e=None, P=None, T=None, sim_fps=1, useDblPrec=False, sim_params=None, appendMode=False, folder='auto'):
 
@@ -910,6 +910,7 @@ class FluidVisualiser:
 
                 video_name += '_new'
 
+            video_name_gif = video_name + '.gif'
             video_name += '.mp4'
 
             animation = matplotlib.animation.FuncAnimation(fig, update, blit=False, frames=N_frames)
@@ -917,7 +918,8 @@ class FluidVisualiser:
             self.t0 = time.time()
 
             animation.save(video_name, writer=matplotlib.animation.FFMpegWriter(fps=video_fps, bitrate=3200, extra_args=['-vcodec', 'libx264']))
-
+            gifwriter = matplotlib.animation.PillowWriter(fps=24)
+            animation.save(video_name_gif, writer=gifwriter, dpi=100)
             if self.printInfo: print('\n\nFluidVisualiser: Animation saved as \"{}\".'.format(video_name))
 
         elif show:
