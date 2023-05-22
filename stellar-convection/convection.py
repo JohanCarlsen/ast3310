@@ -139,8 +139,8 @@ class Convection2D:
 		rhoW = self.rho * self.w 
 		dudx = self.central_x(self.u)
 		dwdy = self.upwind_y(self.w, self.w)
-		dRhoWdx = self.upwind_x(rhoW, self.w)
-		dRhoWdy = self.upwind_y(rhoW, self.u)
+		dRhoWdx = self.upwind_x(rhoW, self.u)
+		dRhoWdy = self.upwind_y(rhoW, self.w)
 		dPdy = self.central_y(self.P)
 
 		self.dRhoWdt = - rhoW * (dudx + dwdy) - self.u * dRhoWdx - self.w * dRhoWdy - dPdy + self.rho * self.g
@@ -255,7 +255,6 @@ class Convection2D:
 		'''
 		Solver of the hydrodynamic equations
 		'''
-		self.boundary_condition()	# Set boundary conditions
 		self.timestep()				# Update timestep 
 
 		e_new = self.e_int + self.dedt * self.dt
@@ -263,23 +262,13 @@ class Convection2D:
 		u_new = (self.rho * self.u + self.dRhoUdt * self.dt) / rho_new 
 		w_new = (self.rho * self.w + self.dRhoWdt * self.dt) / rho_new
 
-		R = self.R_sun
-		M = self.M_sun
-
-		for i in range(self.N_y - 1, 0, -1):
-
-			dM = 4 * np.pi * R**2 * self.rho[:, i]
-			dP = - self.G * M * self.rho[:, i] / R**2
-			dT = self.nabla * self.T[:, i] / self.P[:, i] * dP
-
-			self.T[:, i-1] = self.T[:, i] - dT * self.dy 
-			self.P[:, i-1] = self.P[:, i] - dP * self.dy 
-
-			M -= dM 
-			R -= self.dy
+		P_new = 2 * e_new / 3
+		T_new = P_new * self.mu * self.m_u / (rho_new * self.k_b)		
 
 		self.e_int[:], self.rho[:], self.u[:], self.w[:] = e_new, rho_new, u_new, w_new
-		self.T[:], self.P[:] = self.T, self.P
+		self.T[:], self.P[:] = T_new, P_new
+
+		self.boundary_condition()	# Set boundary conditions
 
 		return self.dt
 
@@ -295,7 +284,7 @@ class Convection2D:
 
 		return dt
 
-	def create_gaussian_pertubation(self, amplitude=0.05, x_0=150, y_0=50, stdev_x=25, stdev_y=25):
+	def create_gaussian_pertubation(self, amplitude=0.08, x_0=150, y_0=50, stdev_x=25, stdev_y=25):
 		'''
 		Create a 2D gaussian. Default amplitude is 5 percent of initial temperature,
 		and the standard devaiations are both 25. The center of the gaussian will be
@@ -314,116 +303,56 @@ class Convection2D:
 
 				self.gauss[i, j] = gauss_ij
 
+	def plot_parameter(self, parameter, save=False, fig_name=None, title=None):
+
+		if save is True and fig_name is None:
+
+			print('When saving figures, please enter the figure file name.')
+			exit()
+
+		p = parameter.T
+
+		fig, ax = plt.subplots(figsize=(10, 5))
+
+		if title is not None:
+
+			ax.set_title(title)
+
+		im = ax.imshow(p, cmap='jet', origin='lower', norm=plt.Normalize(np.min(p), np.max(p)))
+		divider = make_axes_locatable(ax)
+		cax = divider.append_axes('right', size='5%', pad=0.05)
+		cbar = fig.colorbar(im, cax=cax)
+		cbar.ax.invert_yaxis()
+
+		if save:
+
+			filename = 'figures/' + fig_name
+
+			fig.savefig(filename + '.pdf')
+			fig.savefig(filename + '.png')
+
 test = Convection2D()
 test.create_gaussian_pertubation()
 test.initialise()
-
-total_time = 0
-end_time = 60
-time_list = [0]
-u_list = [test.u]
-w_list = [test.w]
-T_list = [test.T]
-P_list = [test.P]
-rho_list = [test.rho]
-e_list = [test.e_int]
-
-i = 0
-
-# start = perf_counter()
-
-# while time_list[i] <= end_time:
-
-# 	dt = test.hydro_solver()
-
-# 	total_time += dt 
-# 	time_list.append(total_time)
-# 	u_list.append(test.u)
-# 	w_list.append(test.w)
-# 	T_list.append(test.T)
-# 	P_list.append(test.P)
-# 	rho_list.append(test.rho)
-# 	e_list.append(test.e_int)
-
-# 	i += 1
-
-# stop = perf_counter()
-# comp_time = stop - start 
-# print(f'Total computation time for {end_time} s in {i-1} iterations: {comp_time//60:2.0f} min {comp_time%60:4.1f} s.')
-
-# t = np.array(time_list)
-# u = np.array(u_list).T
-# w = np.array(w_list).T
-# e = np.array(e_list).T
-# T = np.array(T_list).T
-# P = np.array(P_list).T 
-# rho = np.array(rho_list).T
-
-# fig, ax = plt.subplots(figsize=(12.8, 7.2))
-
-# ax.set_title(f'Time: t = {t[0]:4.1f} s')
-# im = ax.imshow(u[:, :, 0], origin='lower', norm=plt.Normalize(np.min(u), np.max(u)), cmap='plasma', animated=True)
-# divider = make_axes_locatable(ax)
-# cax = divider.append_axes('right', size='3%', pad=0.04)
-# fig.colorbar(im, cax=cax)
-
-# def func(i):
-
-# 	ax.clear()
-# 	ax.set_title(f'Time: t = {t[i]:4.1f} s')
-# 	ax.imshow(u[:, :, i], origin='lower', norm=plt.Normalize(np.min(u), np.max(u)), cmap='plasma', animated=True)
-# 	# im.set_array(u[:, :, i])
-
-# start = perf_counter()
-# ani = FuncAnimation(fig, func, interval=1)
-# # ani.save('test.gif', writer=PillowWriter(fps=144, bitrate=3400), dpi=100)
-# stop = perf_counter()
-# anim_time = stop - start 
-# # print(f'It took {anim_time//60:2.0f} min {anim_time%60:4.1f} s to create and save the animation.')
-
+# test.plot_parameter(test.T)
+# dt = test.hydro_solver()
+# test.plot_parameter(test.T)
 # plt.show()
-
-
-# ax.set_title('i=0, t=0')
-# im = ax.contourf(test.u.T, levels=100, cmap='plasma')#, vmin=0, vmax=3e6)
-# divider = make_axes_locatable(ax)
-# cax = divider.append_axes('right', size='5%', pad=0.05)
-# cbar = fig.colorbar(im, cax=cax)
-# cbar.ax.invert_yaxis()
-
-# def animate(i):
-
-# 	ax.clear()
-# 	dt = test.hydro_solver()
-# 	time = (i+1) * dt
-# 	ax.set_title(f'i={i}, t={time:5.2f} s')
-# 	ax.contourf(test.u.T, levels=100, cmap='plasma')#, vmin=0, vmax=3e6)
-
-# ani = FuncAnimation(fig, animate, frames=9000)
-# ani.save('test.gif', writer=PillowWriter(fps=50))
 
 vis = FVis.FluidVisualiser()
-# vis.save_data(80, test.hydro_solver, rho=test.rho.T, u=test.u.T, \
-# 										w=test.w.T, e=test.e_int.T, \
-# 										P=test.P.T, T=test.T.T)
+# vis.save_data(150, test.hydro_solver, rho=test.rho.T, u=test.u.T, \
+# 									   w=test.w.T, e=test.e_int.T, \
+# 									   P=test.P.T, T=test.T.T)
 
-# vis.animate_2D('w', video_name='w-80-secs', height=4.6, cmap='plasma', folder='FVis_output_80_seconds_simulation', save=True)
-# vis.animate_2D('u', video_name='u-80-secs', height=4.6, cmap='plasma', folder='FVis_output_80_seconds_simulation', save=True)
-# vis.animate_2D('T', video_name='T-80-secs', height=4.6, cmap='plasma', folder='FVis_output_80_seconds_simulation', save=True)
-# vis.animate_2D('P', video_name='P-80-secs', height=4.6, cmap='plasma', folder='FVis_output_80_seconds_simulation', save=True)
-# vis.animate_2D('e', video_name='e-80-secs', height=4.6, cmap='plasma', folder='FVis_output_80_seconds_simulation', save=True)
-# vis.animate_2D('rho', video_name='rho-80-secs', height=4.6, cmap='plasma', folder='FVis_output_80_seconds_simulation', save=True)
-# vis.plot_avg('rho', folder='FVis_output_2023-05-17_10-49')
+# vis.animate_2D('w', height=4.6)
+# vis.plot_avg('drho', folder='FVis_output_120_sec')
 
-# fig, ax = plt.subplots(figsize=(10, 4.6))
-# im = ax.imshow(test.T.T, cmap='plasma')
-# divider = make_axes_locatable(ax)
-# cax = divider.append_axes("right", size="5%", pad=.05)
-# cbar = fig.colorbar(im, cax=cax)
-# cbar.ax.invert_yaxis()
-# ax.invert_yaxis()
-
-# plt.show()
+# vis.animate_2D('u', cmap='jet', height=4.6, save=True, video_name='u_90-secs')
+# vis.animate_2D('w', cmap='jet', height=4.6, save=True, video_name='w_90-secs')
+# vis.animate_2D('T', cmap='jet', height=4.6, save=True, video_name='T_90-secs')
+# vis.animate_2D('P', cmap='jet', height=4.6, save=True, video_name='P_90-secs')
+# vis.animate_2D('rho', cmap='jet', height=4.6, save=True, video_name='rho_90-secs')
+# vis.animate_2D('e', cmap='jet', height=4.6, save=True, video_name='e_90-secs')
 
 
 

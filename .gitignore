@@ -14,6 +14,7 @@ __pycache__/
 
 # Including reports
 
+!*/figures/animations/*.gif
 !Modelling*
 !*interiors.pdf
 !README.txt
