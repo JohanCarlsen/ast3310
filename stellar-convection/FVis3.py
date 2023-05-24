@@ -918,7 +918,7 @@ class FluidVisualiser:
             self.t0 = time.time()
 
             animation.save(video_name, writer=matplotlib.animation.FFMpegWriter(fps=video_fps, bitrate=3200, extra_args=['-vcodec', 'libx264']))
-            gifwriter = matplotlib.animation.PillowWriter(fps=12)
+            gifwriter = matplotlib.animation.PillowWriter(fps=24)
             animation.save(video_name_gif, writer=gifwriter, dpi=50)
             if self.printInfo: print('\n\nFluidVisualiser: Animation saved as \"{}\".'.format(video_name))
 

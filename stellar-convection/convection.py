@@ -3,9 +3,6 @@ import FVis3 as FVis
 import matplotlib.pyplot as plt 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import astropy.constants as const 
-from matplotlib.animation import FuncAnimation, PillowWriter
-from random import randint
-from time import perf_counter
 
 class Convection2D:
 
@@ -40,15 +37,15 @@ class Convection2D:
 		self.p = 0.1
 
 		# Gaussian pertubation
-		self.gauss = np.zeros((self.N_x, self.N_y))
+		self.gauss = np.zeros((self.N_y, self.N_x))
 
 		# Variables
-		self.T = np.zeros((self.N_x, self.N_y)) 		# Temperature [K]
-		self.P = np.zeros((self.N_x, self.N_y))			# Pressure [Pa]
-		self.u = np.zeros((self.N_x, self.N_y))			# Horizontal velocity component [m/s]
-		self.w = np.zeros((self.N_x, self.N_y))			# Vertical velocity component [m/s]
-		self.rho = np.zeros((self.N_x, self.N_y)) 		# Density [kg/m^3]
-		self.e_int = np.zeros((self.N_x, self.N_y)) 	# Internal energy [J/m^3]
+		self.T = np.zeros((self.N_y, self.N_x)) 		# Temperature [K]
+		self.P = np.zeros((self.N_y, self.N_x))			# Pressure [Pa]
+		self.u = np.zeros((self.N_y, self.N_x))			# Horizontal velocity component [m/s]
+		self.w = np.zeros((self.N_y, self.N_x))			# Vertical velocity component [m/s]
+		self.rho = np.zeros((self.N_y, self.N_x)) 		# Density [kg/m^3]
+		self.e_int = np.zeros((self.N_y, self.N_x)) 	# Internal energy [J/m^3]
 
 	def initialise(self):
 		'''
@@ -62,55 +59,51 @@ class Convection2D:
 		e_top = 3 * self.P_top / 2 
 		rho_top = 2 * e_top / 3 * self.mu * self.m_u / (self.k_b * self.T_top)
 
-		self.nabla = 0.4001 	# dlnT/(dlnP) has to be slightly larger than 2/5
+		self.nabla = 0.5 	# dlnT/(dlnP) has to be slightly larger than 2/5
 
-		self.T[:, -1] = self.T_top
-		self.P[:, -1] = self.P_top
-		self.e_int[:, -1] = e_top
-		self.rho[:, -1] = rho_top 
+		self.T[-1, :] = self.T_top + self.gauss[-1, :]
+		self.P[-1, :] = self.P_top
+		self.e_int[-1, :] = e_top
+		self.rho[-1, :] = rho_top 
 
 		R = self.R_sun
 		M = self.M_sun
 
 		for i in range(self.N_y - 1, 0, -1):
 
-			dM = 4 * np.pi * R**2 * self.rho[:, i]
-			dP = - self.G * M * self.rho[:, i] / R**2
-			dT = self.nabla  * self.T[:, i] / self.P[:, i] * dP
+			dM = 4 * np.pi * R**2 * self.rho[i, :]
+			dP = - self.g * self.rho[i, :]
+			dT = self.nabla  * self.T[i, :] / self.P[i, :] * dP
 
-			self.T[:, i-1] = self.T[:, i] - dT * self.dy + self.gauss[:, i-1]
-			self.P[:, i-1] = self.P[:, i] - dP * self.dy 
+			self.T[i-1, :] = self.T[i, :] - dT * self.dy + self.gauss[i-1, :]
+			self.P[i-1, :] = self.P[i, :] - dP * self.dy 
 
-			self.e_int[:, i-1] = 3 * self.P[:, i-1] / 2 
-			self.rho[:, i-1] = 2 * self.e_int[:, i-1] / 3 * self.mu * self.m_u / (self.k_b * self.T[:, i-1])
-
-			M -= dM 
-			R -= self.dy
-
-		self.R_bot = R 
-		self.M_bot = M
+			self.e_int[i-1, :] = 3 * self.P[i-1, :] / 2 
+			self.rho[i-1, :] = 2 * self.e_int[i-1, :] / 3 * self.mu * self.m_u / (self.k_b * self.T[i-1, :])
 
 	def boundary_condition(self):
 		'''
 		Vertical boundary conditions for energy, density, and velocity.
 		'''
 		# Vertical boundary for vertcial velocity component
-		self.w[:, 0] = 0
-		self.w[:, -1] = 0
+		self.w[0, :] = 0
+		self.w[-1, :] = 0
 
 		# Vertical boundary for horizontal velocity component
-		self.u[:, 0] = (- self.u[:, 2] + 4 * self.u[:, 1]) / 3
-		self.u[:, -1] = (- self.u[:, -3] + 4 * self.u[:, -2]) / 3
+		self.u[0, :] = (- self.u[2, :] + 4 * self.u[1, :]) / 3
+		self.u[-1, :] = (- self.u[-3, :] + 4 * self.u[-2, :]) / 3
 
 		# Vertical boundary for energy and density
-		self.e_int[:, -1] = - self.dy * self.G * self.rho[:, -1] / self.R_sun**2 \
-							+ 1/3 * (4 * self.e_int[:, -2] - self.e_int[:, -3])
+		self.e_int[-1, :] = (4 * self.e_int[-2, :] - self.e_int[-3, :]) \
+						  / (3 + 2 * self.dy * self.g * self.mu * self.m_u \
+						  / (self.k_b * self.T[-1, :]))
 
-		self.e_int[:, 0] = - self.dy * self.G * self.rho[:, 0] / self.R_bot**2 \
-							+ 1/3 * (4 * self.e_int[:, 1] - self.e_int[:, 2])
+		self.e_int[0, :] = (4 * self.e_int[1, :] - self.e_int[2, :]) \
+						  / (3 + 2 * self.dy * self.g * self.mu * self.m_u \
+						  / (self.k_b * self.T[0, :]))
 
-		self.rho[:, -1] = 2 * self.e_int[:, -1] / 3 * self.mu * self.m_u / (self.k_b * self.T[:, -1])
-		self.rho[:, 0] = 2 * self.e_int[:, 0] / 3 * self.mu * self.m_u / (self.k_b * self.T[:, 0])
+		self.rho[-1, :] = 2 * self.e_int[-1, :] / 3 * self.mu * self.m_u / (self.k_b * self.T[-1, :])
+		self.rho[0, :] = 2 * self.e_int[0, :] / 3 * self.mu * self.m_u / (self.k_b * self.T[0, :])
 
 	def timestep(self):
 		'''
@@ -143,7 +136,7 @@ class Convection2D:
 		dRhoWdy = self.upwind_y(rhoW, self.w)
 		dPdy = self.central_y(self.P)
 
-		self.dRhoWdt = - rhoW * (dudx + dwdy) - self.u * dRhoWdx - self.w * dRhoWdy - dPdy + self.rho * self.g
+		self.dRhoWdt = - rhoW * (dudx + dwdy) - self.u * dRhoWdx - self.w * dRhoWdy - dPdy - self.rho * self.g
 
 		# Energy equation 
 		dudx = self.central_x(self.u)
@@ -183,9 +176,9 @@ class Convection2D:
 		
 		dt = self.p / delta 
 
-		if dt < 0.01:
+		if dt < 0.1:
 
-			self.dt = 0.01
+			self.dt = 0.1
 
 		else: 
 
@@ -197,10 +190,10 @@ class Convection2D:
 		'''
 		phi = variable
 
-		phi_before = np.roll(phi, -1, axis=0)
-		phi_after = np.roll(phi, 1, axis=0)
+		phi_prev = np.roll(phi, 1, axis=-1)
+		phi_next = np.roll(phi, -1, axis=-1)
 
-		dphidx = (phi_after - phi_before) / (2 * self.dx)
+		dphidx = (phi_next - phi_prev) / (2 * self.dx)
 
 		return dphidx
 
@@ -210,10 +203,10 @@ class Convection2D:
 		'''
 		phi = variable
 
-		phi_before = np.roll(phi, 1, axis=-1)
-		phi_after = np.roll(phi, -1, axis=-1)
+		phi_prev = np.roll(phi, 1, axis=0)
+		phi_next = np.roll(phi, -1, axis=0)
 
-		dphidy = (phi_after - phi_before) / (2 * self.dy)
+		dphidy = (phi_next - phi_prev) / (2 * self.dy)
 
 		return dphidy 
 
@@ -224,13 +217,18 @@ class Convection2D:
 		phi = variable
 		v = velocity_comp
 
-		dphidx = np.zeros((self.N_x, self.N_y))
+		# dphidx = np.zeros((self.N_y, self.N_x))
 
-		phi_before = np.roll(phi, -1, axis=0)
-		phi_after = np.roll(phi, 1, axis=0)
+		phi_prev = np.roll(phi, 1, axis=-1)
+		phi_next = np.roll(phi, -1, axis=-1)
 
-		dphidx[v >= 0] = (phi[v >= 0] - phi_after[v >= 0]) / self.dx 
-		dphidx[v < 0] = (phi_before[v < 0] - phi[v < 0]) / self.dx
+		pos_vel = (phi - phi_prev) / self.dx
+		neg_vel = (phi_next - phi) / self.dx
+
+		dphidx = np.where(v < 0, neg_vel, pos_vel)
+
+		# dphidx[v >= 0] = (phi[v >= 0] - phi_prev[v >= 0]) / self.dx 
+		# dphidx[v < 0] = (phi_next[v < 0] - phi[v < 0]) / self.dx
 
 		return dphidx
 
@@ -241,13 +239,18 @@ class Convection2D:
 		phi = variable
 		v = velocity_comp
 
-		dphidy = np.zeros((self.N_x, self.N_y))
+		# dphidy = np.zeros((self.N_y, self.N_x))
 
-		phi_before = np.roll(phi, -1, axis=-1)
-		phi_after = np.roll(phi, 1, axis=-1)
+		phi_prev = np.roll(phi, 1, axis=0)
+		phi_next = np.roll(phi, -1, axis=0)
 
-		dphidy[v >= 0] = (phi[v >= 0] - phi_before[v >= 0]) / self.dy 
-		dphidy[v < 0] = (phi_after[v < 0] - phi[v < 0]) / self.dy
+		pos_vel = (phi - phi_prev) / self.dy 
+		neg_vel = (phi_next - phi) / self.dy 
+
+		dphidy = np.where(v < 0, neg_vel, pos_vel)
+
+		# dphidy[v >= 0] = (phi[v >= 0] - phi_prev[v >= 0]) / self.dy 
+		# dphidy[v < 0] = (phi_next[v < 0] - phi[v < 0]) / self.dy
 
 		return dphidy
 
@@ -262,13 +265,12 @@ class Convection2D:
 		u_new = (self.rho * self.u + self.dRhoUdt * self.dt) / rho_new 
 		w_new = (self.rho * self.w + self.dRhoWdt * self.dt) / rho_new
 
-		P_new = 2 * e_new / 3
-		T_new = P_new * self.mu * self.m_u / (rho_new * self.k_b)		
-
 		self.e_int[:], self.rho[:], self.u[:], self.w[:] = e_new, rho_new, u_new, w_new
-		self.T[:], self.P[:] = T_new, P_new
 
 		self.boundary_condition()	# Set boundary conditions
+
+		self.P[:] = 2 * self.e_int / 3
+		self.T[:] = self.P * self.mu * self.m_u / (self.rho * self.k_b)
 
 		return self.dt
 
@@ -284,19 +286,19 @@ class Convection2D:
 
 		return dt
 
-	def create_gaussian_pertubation(self, amplitude=0.08, x_0=150, y_0=50, stdev_x=25, stdev_y=25):
+	def create_gaussian_pertubation(self, amplitude=0.1, x_0=150, y_0=80, stdev_x=20, stdev_y=20):
 		'''
-		Create a 2D gaussian. Default amplitude is 5 percent of initial temperature,
-		and the standard devaiations are both 25. The center of the gaussian will be
-		in the center of the box. This will add the gaussian pertubation to the initial temperature.
+		Create a 2D gaussian. Default amplitude is 8 percent of initial temperature,
+		and the standard devaiations are both 20. The center of the gaussian will be
+		in the upper center of the box. This will add the gaussian pertubation to the initial temperature.
 		'''
 		A, sigma_x, sigma_y = amplitude * 5778, stdev_x, stdev_y
 		
-		for i in range(self.N_x):
+		for i in range(self.N_y):
 
-			for j in range(self.N_y):
+			for j in range(self.N_x):
 
-				x, y = i, j
+				y, x = i, j
 
 				gauss_ij = A * np.exp(-((x - x_0)**2 / (2 * sigma_x**2) \
 									  + (y - y_0)**2 / (2 * sigma_y**2)))
@@ -310,7 +312,7 @@ class Convection2D:
 			print('When saving figures, please enter the figure file name.')
 			exit()
 
-		p = parameter.T
+		p = parameter
 
 		fig, ax = plt.subplots(figsize=(10, 5))
 
@@ -331,30 +333,30 @@ class Convection2D:
 			fig.savefig(filename + '.pdf')
 			fig.savefig(filename + '.png')
 
+
 test = Convection2D()
 test.create_gaussian_pertubation()
 test.initialise()
-# test.plot_parameter(test.T)
+# test.plot_parameter(np.flip(test.T, axis=0))
 # dt = test.hydro_solver()
 # test.plot_parameter(test.T)
 # plt.show()
+# exit()
+
+t_tot = 300
 
 vis = FVis.FluidVisualiser()
-# vis.save_data(150, test.hydro_solver, rho=test.rho.T, u=test.u.T, \
-# 									   w=test.w.T, e=test.e_int.T, \
-# 									   P=test.P.T, T=test.T.T)
+vis.save_data(t_tot, test.hydro_solver, rho=test.rho, u=test.u, \
+									      w=test.w, e=test.e_int, \
+								   	      P=test.P, T=test.T)
 
 # vis.animate_2D('w', height=4.6)
-# vis.plot_avg('drho', folder='FVis_output_120_sec')
+# vis.plot_avg('e', folder='FVis_output_2023-05-24_15-28')
+vis.animate_2D('T', height=4.6, quiverscale=0.25, folder='FVis_output_2023-05-24_15-28')
 
-# vis.animate_2D('u', cmap='jet', height=4.6, save=True, video_name='u_90-secs')
-# vis.animate_2D('w', cmap='jet', height=4.6, save=True, video_name='w_90-secs')
-# vis.animate_2D('T', cmap='jet', height=4.6, save=True, video_name='T_90-secs')
-# vis.animate_2D('P', cmap='jet', height=4.6, save=True, video_name='P_90-secs')
-# vis.animate_2D('rho', cmap='jet', height=4.6, save=True, video_name='rho_90-secs')
-# vis.animate_2D('e', cmap='jet', height=4.6, save=True, video_name='e_90-secs')
-
-
-
-
-
+# vis.animate_2D('u',height=4.6, save=True, video_name=f'u_{t_tot}-secs', quiverscale=0.25)
+# vis.animate_2D('w',height=4.6, save=True, video_name=f'w_{t_tot}-secs', quiverscale=0.25)
+# vis.animate_2D('T',height=4.6, save=True, video_name=f'T_{t_tot}-secs', quiverscale=0.25)
+# vis.animate_2D('P',height=4.6, save=True, video_name=f'P_{t_tot}-secs', quiverscale=0.25)
+# vis.animate_2D('rho',height=4.6, save=True, video_name=f'rho_{t_tot}-secs', quiverscale=0.25)
+# vis.animate_2D('e',height=4.6, save=True, video_name=f'e_{t_tot}-secs', quiverscale=0.25)
