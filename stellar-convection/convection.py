@@ -96,11 +96,11 @@ class Convection2D:
 
 		# Vertical boundary for energy and density
 		self.e_int[-1, :] = (4 * self.e_int[-2, :] - self.e_int[-3, :]) \
-						  / (3 + 2 * self.dy * self.g * self.mu * self.m_u \
+						  / (3 - 2 * self.dy * self.g * self.mu * self.m_u \
 						  / (self.k_b * self.T[-1, :]))
 
 		self.e_int[0, :] = (4 * self.e_int[1, :] - self.e_int[2, :]) \
-						  / (3 + 2 * self.dy * self.g * self.mu * self.m_u \
+						  / (3 - 2 * self.dy * self.g * self.mu * self.m_u \
 						  / (self.k_b * self.T[0, :]))
 
 		self.rho[-1, :] = 2 * self.e_int[-1, :] / 3 * self.mu * self.m_u / (self.k_b * self.T[-1, :])
@@ -289,7 +289,7 @@ class Convection2D:
 
 	def create_gaussian_pertubation(self, amplitude=0.1, x_0=150, y_0=80, stdev_x=20, stdev_y=20):
 		'''
-		Create a 2D gaussian. Default amplitude is 8 percent of initial temperature,
+		Create a 2D gaussian. Default amplitude is 10 percent of initial temperature,
 		and the standard devaiations are both 20. The center of the gaussian will be
 		in the upper center of the box. This will add the gaussian pertubation to the initial temperature.
 		'''
@@ -346,14 +346,37 @@ if __name__ == '__main__':
 
 	# Will simulate for 60 seconds, taking snapshots every 10'th second.
 	t_sanity = 60 
-	snapshots_sanity = [0, 10, 20, 30, 40, 50, 60]
+	snapshots_sanity = list(np.arange(0, 61, 10))
 
 	vis_sanity = FVis.FluidVisualiser()
 	vis_sanity.save_data(t_sanity, sanity_box.sanity_check, u=sanity_box.u, w=sanity_box.w, \
 						 e=sanity_box.e_int, T=sanity_box.T, P=sanity_box.P, rho=sanity_box.rho)
 
-	vis_sanity.animate_2D('T', height=4.6, quiverscale=0.25, save=True, video_name=f'sanity_T_{t_sanity}-sec', \
+	vis_sanity.animate_2D('T', height=4.6, quiverscale=0.25, save=True, video_name=f'figures/animations/sanity_T_{t_sanity}-sec', \
 						   units=units, extent=extent)
 
 	vis_sanity.animate_2D('T', height=4.6, quiverscale=0.25, snapshots=snapshots_sanity, video_name=f'sanity_T_{t_sanity}-sec', \
 						   units=units, extent=extent)
+
+	# Creating the simulation box and adding a gaussian perturbation to the initial temperature.
+	sim_box = Convection2D()
+	sim_box.create_gaussian_pertubation()
+	sim_box.initialise()
+
+	# Simulate for 10 minutes (600 seconds), taking snapshots every minute.
+	t_sim = 600 
+	snapshots = list(np.arange(0, 601, 60))
+
+	vis = FVis.FluidVisualiser()
+	vis.save_data(t_sim, sim_box.hydro_solver, u=sim_box.u, w=sim_box.w, \
+				  e=sim_box.e_int, T=sim_box.T, P=sim_box.P, rho=sim_box.rho)
+
+	vis.animate_2D('T', height=4.6, quiverscale=0.25, save=True, video_name=f'figures/animations/T_{t_sim}-sec', \
+				    units=units, extent=extent)
+
+	vis.animate_2D('T', height=4.6, quiverscale=0.25, snapshots=snapshots, video_name=f'T_{t_sim}-sec', \
+				    units=units, extent=extent)
+
+
+
+

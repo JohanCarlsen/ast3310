@@ -14,7 +14,10 @@ __pycache__/
 
 # Including reports
 
+!*/figures/*.png
 !*/figures/animations/*.gif
+!*/figures/sanity-check/*.png
+!*/figures/sanity-check/animations/*.gif
 !Modelling*
 !*interiors.pdf
 !README.txt
