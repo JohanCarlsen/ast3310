@@ -67,12 +67,9 @@ class Convection2D:
 		self.e_int[-1, :] = e_top
 		self.rho[-1, :] = rho_top 
 
-		R = self.R_sun
-		M = self.M_sun
-
 		for i in range(self.N_y - 1, 0, -1):
 
-			dM = 4 * np.pi * R**2 * self.rho[i, :]
+			dM = 4 * np.pi * self.R_sun**2 * self.rho[i, :]
 			dP = - self.g * self.rho[i, :]
 			dT = self.nabla  * self.T[i, :] / self.P[i, :] * dP
 
@@ -218,8 +215,6 @@ class Convection2D:
 		phi = variable
 		v = velocity_comp
 
-		# dphidx = np.zeros((self.N_y, self.N_x))
-
 		phi_prev = np.roll(phi, 1, axis=-1)
 		phi_next = np.roll(phi, -1, axis=-1)
 
@@ -227,9 +222,6 @@ class Convection2D:
 		neg_vel = (phi_next - phi) / self.dx
 
 		dphidx = np.where(v < 0, neg_vel, pos_vel)
-
-		# dphidx[v >= 0] = (phi[v >= 0] - phi_prev[v >= 0]) / self.dx 
-		# dphidx[v < 0] = (phi_next[v < 0] - phi[v < 0]) / self.dx
 
 		return dphidx
 
@@ -240,8 +232,6 @@ class Convection2D:
 		phi = variable
 		v = velocity_comp
 
-		# dphidy = np.zeros((self.N_y, self.N_x))
-
 		phi_prev = np.roll(phi, 1, axis=0)
 		phi_next = np.roll(phi, -1, axis=0)
 
@@ -249,9 +239,6 @@ class Convection2D:
 		neg_vel = (phi_next - phi) / self.dy 
 
 		dphidy = np.where(v < 0, neg_vel, pos_vel)
-
-		# dphidy[v >= 0] = (phi[v >= 0] - phi_prev[v >= 0]) / self.dy 
-		# dphidy[v < 0] = (phi_next[v < 0] - phi[v < 0]) / self.dy
 
 		return dphidy
 
