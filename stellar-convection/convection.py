@@ -3,6 +3,7 @@ import FVis3 as FVis
 import matplotlib.pyplot as plt 
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import astropy.constants as const 
+from random import randint
 
 class Convection2D:
 
@@ -333,30 +334,26 @@ class Convection2D:
 			fig.savefig(filename + '.pdf')
 			fig.savefig(filename + '.png')
 
+if __name__ == '__main__':
 
-test = Convection2D()
-test.create_gaussian_pertubation()
-test.initialise()
-# test.plot_parameter(np.flip(test.T, axis=0))
-# dt = test.hydro_solver()
-# test.plot_parameter(test.T)
-# plt.show()
-# exit()
+	# Setting units to Mm, and the correct extent of the box.
+	units = {'Lx': 'Mm', 'Lz':'Mm'}
+	extent = [0, 12, 0, 4]
 
-t_tot = 300
+	# Creating and initializing the box for the sanity check.
+	sanity_box = Convection2D()
+	sanity_box.initialise()
 
-vis = FVis.FluidVisualiser()
-vis.save_data(t_tot, test.hydro_solver, rho=test.rho, u=test.u, \
-									      w=test.w, e=test.e_int, \
-								   	      P=test.P, T=test.T)
+	# Will simulate for 60 seconds, taking snapshots every 10'th second.
+	t_sanity = 60 
+	snapshots_sanity = [0, 10, 20, 30, 40, 50, 60]
 
-# vis.animate_2D('w', height=4.6)
-# vis.plot_avg('e', folder='FVis_output_2023-05-24_15-28')
-vis.animate_2D('T', height=4.6, quiverscale=0.25, folder='FVis_output_2023-05-24_15-28')
+	vis_sanity = FVis.FluidVisualiser()
+	vis_sanity.save_data(t_sanity, sanity_box.sanity_check, u=sanity_box.u, w=sanity_box.w, \
+						 e=sanity_box.e_int, T=sanity_box.T, P=sanity_box.P, rho=sanity_box.rho)
 
-# vis.animate_2D('u',height=4.6, save=True, video_name=f'u_{t_tot}-secs', quiverscale=0.25)
-# vis.animate_2D('w',height=4.6, save=True, video_name=f'w_{t_tot}-secs', quiverscale=0.25)
-# vis.animate_2D('T',height=4.6, save=True, video_name=f'T_{t_tot}-secs', quiverscale=0.25)
-# vis.animate_2D('P',height=4.6, save=True, video_name=f'P_{t_tot}-secs', quiverscale=0.25)
-# vis.animate_2D('rho',height=4.6, save=True, video_name=f'rho_{t_tot}-secs', quiverscale=0.25)
-# vis.animate_2D('e',height=4.6, save=True, video_name=f'e_{t_tot}-secs', quiverscale=0.25)
+	vis_sanity.animate_2D('T', height=4.6, quiverscale=0.25, save=True, video_name=f'sanity_T_{t_sanity}-sec', \
+						   units=units, extent=extent)
+
+	vis_sanity.animate_2D('T', height=4.6, quiverscale=0.25, snapshots=snapshots_sanity, video_name=f'sanity_T_{t_sanity}-sec', \
+						   units=units, extent=extent)
