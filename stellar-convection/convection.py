@@ -382,10 +382,11 @@ if __name__ == '__main__':
 	sim_box.plot_parameter(sim_box.gauss, save=True, title='Gaussian perturbation', fig_name=f'{N_peaks}-gauss_pert', cbar_label='Temperature [K]')
 	plt.show()
 
-	# Simulate for 10 minutes (600 seconds), taking snapshots every 2nd minute.
+	# Simulate for 10 minutes (600 seconds), taking snapshots every 180th second.
 	t_sim = 600 
-	snapshots = list(np.arange(0, 601, 120))
+	snapshots = list(np.arange(0, 601, 180))
 
+	# vis = FVis.FluidVisualiser(fontsize=16)
 	vis = FVis.FluidVisualiser(fontsize=18)
 	vis.save_data(t_sim, sim_box.hydro_solver, u=sim_box.u, w=sim_box.w, \
 				  e=sim_box.e_int, T=sim_box.T, P=sim_box.P, rho=sim_box.rho)
@@ -393,13 +394,16 @@ if __name__ == '__main__':
 	vis.animate_2D('T', height=4.6, quiverscale=0.25, save=True, video_name=f'figures/animations/T_{t_sim}-sec', \
 				    units=units, extent=extent)
 
-	vis.animate_2D('T', height=8, aspect=1.75, quiverscale=0.25, snapshots=snapshots, video_name=f'T_{t_sim}-sec', \
-				    units=units, extent=extent, folder='FVis_output_600-sec')
-
+	vis.animate_2D('v', height=8, aspect=1.75, quiverscale=0.25, snapshots=snapshots, video_name=f'T_{t_sim}-sec', \
+				    units=units, extent=extent)
 
 	vis.animate_2D('v', height=8, aspect=1.75, quiverscale=0.25, snapshots=snapshots, video_name=f'v_{t_sim}-sec', \
-			    units=units, extent=extent, folder='FVis_output_600-sec')
+			    units=units, extent=extent)
 
+	vis.plot_avg('v', units=units)
+	vis.plot_avg('T', units=units)
+	vis.plot_avg('e', units=units)
+	vis.plot_avg('rho', units=units)
 
 
 

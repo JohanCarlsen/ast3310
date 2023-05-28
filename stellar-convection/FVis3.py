@@ -37,7 +37,7 @@ class FluidVisualiser:
         self.use_blit = blit
         self.hasSaved = False
 
-        mpl.rcParams.update({'font.size': self.fontsize, 'lines.linewidth': 1})
+        mpl.rcParams.update({'font.size': self.fontsize})
 
     def save_data(self, sim_time, update_func, rho=None, u=None, w=None, e=None, P=None, T=None, sim_fps=1, useDblPrec=False, sim_params=None, appendMode=False, folder='auto'):
 
@@ -790,6 +790,9 @@ class FluidVisualiser:
         plt.title(title)
         plt.xlabel('Time' + ('' if time_unit == '' else ' [{}]'.format(time_unit)))
         plt.ylabel('Average {}{}{}'.format(name, '' if not relative else (' (relative to {} value)'.format('mean' if q_list[0] == 0 else 'initial')), '' if unit == '' else ' [{}]'.format(unit)))
+        plt.savefig('avg_' + quantity + '.pdf', bbox_inches='tight')
+        plt.savefig('avg_' + quantity + '.png', bbox_inches='tight')
+        plt.tight_layout()
         plt.show()
 
     def delete_current_data(self):
@@ -919,7 +922,7 @@ class FluidVisualiser:
 
             animation.save(video_name, writer=matplotlib.animation.FFMpegWriter(fps=video_fps, bitrate=3200, extra_args=['-vcodec', 'libx264']))
             gifwriter = matplotlib.animation.PillowWriter(fps=24)
-            animation.save(video_name_gif, writer=gifwriter, dpi=50)
+            # animation.save(video_name_gif, writer=gifwriter, dpi=50)
             if self.printInfo: print('\n\nFluidVisualiser: Animation saved as \"{}\".'.format(video_name))
 
         elif show:
