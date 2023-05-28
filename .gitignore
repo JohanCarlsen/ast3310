@@ -18,6 +18,8 @@ __pycache__/
 !*/figures/animations/*.gif
 !*/figures/sanity-check/*.png
 !*/figures/sanity-check/animations/*.gif
+!*/figures/triple-gaussian/*.png
+!*/figures/triple-gaussian/animations/*.gif
 !Modelling*
 !*interiors.pdf
 !README.txt

@@ -57,11 +57,15 @@ class Convection2D:
 		self.T_top = 5778 	# [K]
 		self.P_top = 1.8e4 	# [Pa]
 
+		# Internal energy and mass density are calculated from the ideal gas
+		# equation, and the equation of state for an idel gas.
 		e_top = 3 * self.P_top / 2 
 		rho_top = 2 * e_top / 3 * self.mu * self.m_u / (self.k_b * self.T_top)
 
 		self.nabla = 0.5 	# dlnT/(dlnP) has to be slightly larger than 2/5
 
+		# The box is filled "upside-down" in order to get
+		# the origin at the bottom left.
 		self.T[-1, :] = self.T_top + self.gauss[-1, :]
 		self.P[-1, :] = self.P_top
 		self.e_int[-1, :] = e_top
@@ -83,15 +87,19 @@ class Convection2D:
 		'''
 		Vertical boundary conditions for energy, density, and velocity.
 		'''
-		# Vertical boundary for vertcial velocity component
+		# The vertical component of the vertical 
+		# velocity is zero at the boundaries.
 		self.w[0, :] = 0
 		self.w[-1, :] = 0
 
-		# Vertical boundary for horizontal velocity component
+		# The vertical gradient of the horizontal 
+		# velocity is zero at the boundaries.
 		self.u[0, :] = (- self.u[2, :] + 4 * self.u[1, :]) / 3
 		self.u[-1, :] = (- self.u[-3, :] + 4 * self.u[-2, :]) / 3
 
-		# Vertical boundary for energy and density
+		# The gas needs to be in hydrostatic equilibrium at the 
+		# boundaries, meaning the pressure gradient can be used 
+		# to find the internal energy at the boundaries.
 		self.e_int[-1, :] = (4 * self.e_int[-2, :] - self.e_int[-3, :]) \
 						  / (3 - 2 * self.dy * self.g * self.mu * self.m_u \
 						  / (self.k_b * self.T[-1, :]))
@@ -100,6 +108,8 @@ class Convection2D:
 						  / (3 - 2 * self.dy * self.g * self.mu * self.m_u \
 						  / (self.k_b * self.T[0, :]))
 
+	    # Using the internal energy and temperature to find the mass
+	    # density, using the ideal gas equation.
 		self.rho[-1, :] = 2 * self.e_int[-1, :] / 3 * self.mu * self.m_u / (self.k_b * self.T[-1, :])
 		self.rho[0, :] = 2 * self.e_int[0, :] / 3 * self.mu * self.m_u / (self.k_b * self.T[0, :])
 
@@ -153,6 +163,8 @@ class Convection2D:
 		rel_rhoU = np.abs(self.dRhoUdt[non_zero_u] / rhoU[non_zero_u])
 		rel_rhoW = np.abs(self.dRhoWdt[non_zero_w] / rhoW[non_zero_w])
 
+		# The velocities can contain only zeros, meaning the arrays non_zero_u
+		# and non_zero_w can be empty. If so, they are set to zero.
 		if len(rel_rhoU) == 0 or len(rel_rhoW) == 0:
 
 			rel_rhoU = 0 
@@ -168,12 +180,15 @@ class Convection2D:
 
 		delta = np.max(max_vals)
 
+		# Set delta to 1 if all of the relative values are zero.
 		if delta == 0:
 
 			delta = 1
 		
 		dt = self.p / delta 
 
+		# In order to not get unnesseccarily small time steps, a
+		# lower bound on dt is set to be 0.1 s.
 		if dt < 0.1:
 
 			self.dt = 0.1
@@ -274,26 +289,30 @@ class Convection2D:
 
 		return dt
 
-	def create_gaussian_pertubation(self, amplitude=0.1, x_0=150, y_0=80, stdev_x=20, stdev_y=20):
+	def create_gaussian_pertubation(self, N_peaks=1, amplitudes=[0.9], y_list=[50], sigma_x=5, sigma_y=5):
 		'''
-		Create a 2D gaussian. Default amplitude is 10 percent of initial temperature,
-		and the standard devaiations are both 20. The center of the gaussian will be
-		in the upper center of the box. This will add the gaussian pertubation to the initial temperature.
+		Create a 2D gaussian surface to be added to the initial temperature.
+		The number of peaks represents the number of perturbations. 
 		'''
-		A, sigma_x, sigma_y = amplitude * 5778, stdev_x, stdev_y
-		
-		for i in range(self.N_y):
+		spacing = self.N_x / (N_peaks+1)
+		x_0 = 0
 
-			for j in range(self.N_x):
+		for k in range(N_peaks):
 
-				y, x = i, j
+			A = amplitudes[k] * 5778
+			x_0 += spacing
+			y_0 = y_list[k]
 
-				gauss_ij = A * np.exp(-((x - x_0)**2 / (2 * sigma_x**2) \
-									  + (y - y_0)**2 / (2 * sigma_y**2)))
+			for i in range(self.N_y):
 
-				self.gauss[i, j] = gauss_ij
+				for j in range(self.N_x):
 
-	def plot_parameter(self, parameter, save=False, fig_name=None, title=None):
+					x, y = j, i 
+
+					self.gauss[i, j] += A * np.exp(-((x - x_0)**2 / (2 * sigma_x**2) \
+								 				   + (y - y_0)**2 / (2 * sigma_y**2)))
+
+	def plot_parameter(self, parameter, save=False, fig_name=None, title=None, cbar_label=None):
 
 		if save is True and fig_name is None:
 
@@ -302,24 +321,29 @@ class Convection2D:
 
 		p = parameter
 
-		fig, ax = plt.subplots(figsize=(10, 5))
+		with plt.rc_context({'figure.figsize': (12, 4), 'font.size': 20}):
 
-		if title is not None:
+			fig, ax = plt.subplots(figsize=(12, 4))
 
-			ax.set_title(title)
+			if title is not None:
 
-		im = ax.imshow(p, cmap='jet', origin='lower', norm=plt.Normalize(np.min(p), np.max(p)))
-		divider = make_axes_locatable(ax)
-		cax = divider.append_axes('right', size='5%', pad=0.05)
-		cbar = fig.colorbar(im, cax=cax)
-		cbar.ax.invert_yaxis()
+				ax.set_title(title)
 
-		if save:
+			im = ax.imshow(p, cmap='jet', origin='lower', extent=[0, 12, 0, 4], \
+						   norm=plt.Normalize(np.min(p), np.max(p)), aspect='auto')
+			ax.set_xlabel('Horizontal distance [Mm]')
+			ax.set_ylabel('Vertical distance [Mm]')
+			ax.set_yticks(np.arange(0, 5))
+			divider = make_axes_locatable(ax)
+			cax = divider.append_axes('right', size='1%', pad=0.02)
+			cbar = fig.colorbar(im, cax=cax, label=cbar_label if cbar_label is not None else '')
 
-			filename = 'figures/' + fig_name
+			if save:
 
-			fig.savefig(filename + '.pdf')
-			fig.savefig(filename + '.png')
+				filename = 'figures/' + fig_name
+
+				fig.savefig(filename + '.pdf', bbox_inches='tight')
+				fig.savefig(filename + '.png', bbox_inches='tight')
 
 if __name__ == '__main__':
 
@@ -345,24 +369,39 @@ if __name__ == '__main__':
 	vis_sanity.animate_2D('T', height=4.6, quiverscale=0.25, snapshots=snapshots_sanity, video_name=f'sanity_T_{t_sanity}-sec', \
 						   units=units, extent=extent)
 
-	# Creating the simulation box and adding a gaussian perturbation to the initial temperature.
+	# Creating the simulation box and adding a gaussian perturbation with 4 peaks to the initial temperature.
+	N_peaks = 4 
+	amplitudes = [0.7, 0.9, 1, 0.8]
+	y_list = [80, 50, 60, 90]
+
 	sim_box = Convection2D()
-	sim_box.create_gaussian_pertubation()
+	sim_box.create_gaussian_pertubation(N_peaks, amplitudes, y_list)
 	sim_box.initialise()
 
-	# Simulate for 10 minutes (600 seconds), taking snapshots every minute.
-	t_sim = 600 
-	snapshots = list(np.arange(0, 601, 60))
+	# Plotting the Gaussian perturbation
+	sim_box.plot_parameter(sim_box.gauss, save=True, title='Gaussian perturbation', fig_name=f'{N_peaks}-gauss_pert', cbar_label='Temperature [K]')
+	plt.show()
 
-	vis = FVis.FluidVisualiser()
+	# Simulate for 10 minutes (600 seconds), taking snapshots every 2nd minute.
+	t_sim = 600 
+	snapshots = list(np.arange(0, 601, 120))
+
+	vis = FVis.FluidVisualiser(fontsize=18)
 	vis.save_data(t_sim, sim_box.hydro_solver, u=sim_box.u, w=sim_box.w, \
 				  e=sim_box.e_int, T=sim_box.T, P=sim_box.P, rho=sim_box.rho)
 
 	vis.animate_2D('T', height=4.6, quiverscale=0.25, save=True, video_name=f'figures/animations/T_{t_sim}-sec', \
 				    units=units, extent=extent)
 
-	vis.animate_2D('T', height=4.6, quiverscale=0.25, snapshots=snapshots, video_name=f'T_{t_sim}-sec', \
-				    units=units, extent=extent)
+	vis.animate_2D('T', height=8, aspect=1.75, quiverscale=0.25, snapshots=snapshots, video_name=f'T_{t_sim}-sec', \
+				    units=units, extent=extent, folder='FVis_output_600-sec')
+
+
+	vis.animate_2D('v', height=8, aspect=1.75, quiverscale=0.25, snapshots=snapshots, video_name=f'v_{t_sim}-sec', \
+			    units=units, extent=extent, folder='FVis_output_600-sec')
+
+
+
 
 
 
