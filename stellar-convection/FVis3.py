@@ -789,7 +789,7 @@ class FluidVisualiser:
 
         plt.title(title)
         plt.xlabel('Time' + ('' if time_unit == '' else ' [{}]'.format(time_unit)))
-        plt.ylabel('Average {}{}{}'.format(name, '' if not relative else (' (relative to {} value)'.format('mean' if q_list[0] == 0 else 'initial')), '' if unit == '' else ' [{}]'.format(unit)))
+        plt.ylabel('Average {}{}{}'.format(name, '' if not relative else ('\n(relative to {} value)'.format('mean' if q_list[0] == 0 else 'initial')), '' if unit == '' else ' [{}]'.format(unit)))
         plt.savefig('avg_' + quantity + '.pdf', bbox_inches='tight')
         plt.savefig('avg_' + quantity + '.png', bbox_inches='tight')
         plt.tight_layout()

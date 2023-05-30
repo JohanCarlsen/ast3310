@@ -73,7 +73,6 @@ class Convection2D:
 
 		for i in range(self.N_y - 1, 0, -1):
 
-			dM = 4 * np.pi * self.R_sun**2 * self.rho[i, :]
 			dP = - self.g * self.rho[i, :]
 			dT = self.nabla  * self.T[i, :] / self.P[i, :] * dP
 
@@ -386,7 +385,6 @@ if __name__ == '__main__':
 	t_sim = 600 
 	snapshots = list(np.arange(0, 601, 180))
 
-	# vis = FVis.FluidVisualiser(fontsize=16)
 	vis = FVis.FluidVisualiser(fontsize=18)
 	vis.save_data(t_sim, sim_box.hydro_solver, u=sim_box.u, w=sim_box.w, \
 				  e=sim_box.e_int, T=sim_box.T, P=sim_box.P, rho=sim_box.rho)
@@ -400,10 +398,13 @@ if __name__ == '__main__':
 	vis.animate_2D('v', height=8, aspect=1.75, quiverscale=0.25, snapshots=snapshots, video_name=f'v_{t_sim}-sec', \
 			    units=units, extent=extent)
 
-	vis.plot_avg('v', units=units)
-	vis.plot_avg('T', units=units)
-	vis.plot_avg('e', units=units)
-	vis.plot_avg('rho', units=units)
+	vis.animate_energyflux(height=8, aspect=1.75, snapshots=snapshots, \
+						   units=units, extent=extent, folder='FVis_output_600-sec')
+
+	vis.plot_avg('v', relative=True, units=units, folder='FVis_output_600-sec')
+	vis.plot_avg('T', relative=True, units=units, folder='FVis_output_600-sec')
+	vis.plot_avg('e', relative=True, showTrendline=True, units=units, folder='FVis_output_600-sec')
+	vis.plot_avg('rho', relative=True, showTrendline=True, units=units, folder='FVis_output_600-sec')
 
 
 

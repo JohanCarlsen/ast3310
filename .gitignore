@@ -7,6 +7,8 @@
 FVis_output*
 *.gif
 *.mp4
+*.tar
+*.zip
 
 # Folders
 
@@ -20,6 +22,7 @@ __pycache__/
 !*/figures/sanity-check/animations/*.gif
 !*/figures/triple-gaussian/*.png
 !*/figures/triple-gaussian/animations/*.gif
+!*Photosphere.pdf
 !Modelling*
 !*interiors.pdf
 !README.txt
